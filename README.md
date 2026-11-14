@@ -8,7 +8,7 @@
 
 > **The Problem:** Over 500 hours of video are uploaded online every minute. False health remedies, financial scams, altered historical claims, and sensationalist clickbait spread 6x faster than verified facts. Viewers rarely pause a video to manually cross-reference sources.
 >
-> **The Solution:** **LiveTruth Shield** is an autonomous, real-time AI fact-checking engine built for YouTube, web video players, and local video files. Powered by **Google Gemini with Live Search Grounding**, it scans spoken dialogue across the video timeline, resolves speech-to-text phonetic ambiguities, verifies claims against authoritative global repositories (e.g. Nature, IEEE, NIH, WHO, FAA, CISA), and renders an interactive **Truth Timeline**, **Clickbait Index**, and expandable **Evidence Dossiers**.
+> **The Solution:** **LiveTruth Shield** is an autonomous, real-time AI fact-checking engine built for YouTube, web video players, and local video files. Powered by **Google Gemini with Live Search Grounding**, it scans spoken dialogue across the video timeline, resolves speech-to-text phonetic ambiguities, verifies claims against authoritative global repositories (e.g. Nature, IEEE, NIH, WHO, FAA, CISA), and renders an interactive **Truth Timeline**, **Clickbait Index**, and expandable **Evidence Dossiers**
 
 ---
 
