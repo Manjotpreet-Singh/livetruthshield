@@ -1,0 +1,652 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LiveTruth Shield // Presentation Deck</title>
+    <style>
+        :root {
+            --bg: #090D16;
+            --surface: #111827;
+            --surface-hover: #1E293B;
+            --border: #1E293B;
+            --blue: #3B82F6;
+            --cyan: #06B6D4;
+            --emerald: #10B981;
+            --amber: #F59E0B;
+            --coral: #EF4444;
+            --text-main: #FFFFFF;
+            --text-dim: #94A3B8;
+        }
+
+        * { margin:0; padding:0; box-sizing:border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+        body { background: var(--bg); color: var(--text-main); overflow: hidden; height: 100vh; display: flex; flex-direction: column; }
+
+        /* Slide Stage */
+        .stage {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 40px;
+            position: relative;
+        }
+
+        .slide {
+            display: none;
+            width: 100%;
+            max-width: 1200px;
+            height: 680px;
+            background: radial-gradient(circle at 10% 20%, rgba(59, 130, 246, 0.08), transparent 40%),
+                        radial-gradient(circle at 90% 80%, rgba(6, 182, 212, 0.05), transparent 40%),
+                        var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 24px;
+            padding: 50px 60px;
+            box-shadow: 0 25px 60px rgba(0, 0, 0, 0.6);
+            flex-direction: column;
+            justify-content: space-between;
+            position: relative;
+            animation: fadeIn 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .slide.active { display: flex; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(12px) scale(0.985); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        .tag {
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--cyan);
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            margin-bottom: 6px;
+        }
+
+        h2 {
+            font-size: 32px;
+            font-weight: 800;
+            line-height: 1.2;
+            margin-bottom: 8px;
+            color: var(--text-main);
+        }
+
+        .subtitle {
+            font-size: 15px;
+            color: var(--text-dim);
+            margin-bottom: 30px;
+        }
+
+        .grid-3 {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            margin-top: 10px;
+        }
+
+        .grid-2 {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 24px;
+            margin-top: 10px;
+        }
+
+        .grid-4 {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+            margin-top: 10px;
+        }
+
+        .card {
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            transition: all 0.2s ease;
+        }
+        .card:hover { border-color: rgba(59, 130, 246, 0.4); transform: translateY(-2px); }
+
+        .card-icon { font-size: 26px; margin-bottom: 4px; }
+        .card-title { font-size: 16px; font-weight: 700; color: #FFFFFF; }
+        .card-desc { font-size: 13px; line-height: 1.5; color: var(--text-dim); }
+
+        /* Title Slide Specifics */
+        .title-slide-content {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            height: 100%;
+            gap: 20px;
+        }
+        .hero-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 14px;
+            background: rgba(59, 130, 246, 0.15);
+            border: 1px solid rgba(59, 130, 246, 0.4);
+            border-radius: 30px;
+            color: var(--cyan);
+            font-size: 12px;
+            font-weight: 700;
+            width: fit-content;
+        }
+        .hero-title {
+            font-size: 56px;
+            font-weight: 900;
+            letter-spacing: -0.02em;
+            background: linear-gradient(135deg, #FFFFFF 40%, var(--cyan) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .hero-desc {
+            font-size: 20px;
+            color: var(--text-dim);
+            max-width: 800px;
+            line-height: 1.5;
+        }
+
+        /* Controls */
+        .controls {
+            height: 70px;
+            background: rgba(15, 23, 42, 0.8);
+            border-top: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 40px;
+            backdrop-filter: blur(10px);
+        }
+
+        .btn-group { display: flex; gap: 12px; }
+        .nav-btn {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border);
+            color: var(--text-main);
+            padding: 8px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s ease;
+        }
+        .nav-btn:hover { background: var(--blue); border-color: var(--blue); }
+
+        .slide-counter {
+            font-size: 13px;
+            color: var(--text-dim);
+            font-family: monospace;
+        }
+
+        .download-btn {
+            background: linear-gradient(135deg, #2563EB, #06B6D4);
+            color: #FFFFFF;
+            border: none;
+            padding: 8px 18px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 700;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .download-btn:hover { opacity: 0.9; }
+
+        /* Floating Close 'X' Sign */
+        .close-deck-btn {
+            position: fixed;
+            top: 20px;
+            right: 24px;
+            z-index: 99999;
+            background: rgba(17, 24, 39, 0.88);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            color: #FFFFFF;
+            padding: 8px 18px;
+            border-radius: 999px;
+            font-size: 13px;
+            font-weight: 700;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+            transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .close-deck-btn .close-icon {
+            font-size: 15px;
+            font-weight: 900;
+            line-height: 1;
+            color: #EF4444;
+            transition: transform 0.2s ease, color 0.2s ease;
+        }
+        .close-deck-btn:hover {
+            background: rgba(239, 68, 68, 0.2);
+            border-color: rgba(239, 68, 68, 0.6);
+            transform: translateY(-2px);
+            box-shadow: 0 10px 28px rgba(239, 68, 68, 0.3);
+        }
+        .close-deck-btn:hover .close-icon {
+            color: #FFFFFF;
+            transform: rotate(90deg);
+        }
+    
+        /* Strongly Responsive Mobile & Tablet Rules */
+        @media (max-width: 900px) {
+            body {
+                overflow-y: auto !important;
+                height: auto !important;
+                min-height: 100vh;
+            }
+            .stage {
+                padding: 16px 12px;
+                height: auto !important;
+                min-height: calc(100vh - 65px);
+                align-items: flex-start;
+            }
+            .slide {
+                height: auto !important;
+                min-height: 520px;
+                padding: 24px 18px;
+                border-radius: 18px;
+                gap: 16px;
+            }
+            .hero-title {
+                font-size: 34px !important;
+                line-height: 1.15;
+            }
+            .hero-desc {
+                font-size: 15px !important;
+            }
+            h2 {
+                font-size: 22px !important;
+                line-height: 1.25;
+            }
+            .subtitle {
+                font-size: 13px !important;
+                margin-bottom: 16px;
+            }
+            .grid-3, .grid-2, .grid-4 {
+                grid-template-columns: 1fr !important;
+                gap: 12px !important;
+            }
+            .card {
+                padding: 16px;
+            }
+            .controls {
+                height: 60px;
+                padding: 0 16px;
+                position: sticky;
+                bottom: 0;
+                z-index: 1000;
+            }
+            .close-deck-btn {
+                top: 10px;
+                right: 12px;
+                padding: 6px 12px;
+                font-size: 12px;
+            }
+            .nav-btn, .download-btn {
+                padding: 6px 12px;
+                font-size: 12px;
+            }
+        }
+        @media (max-width: 480px) {
+            .hero-title {
+                font-size: 28px !important;
+            }
+            .stage {
+                padding: 8px;
+            }
+            .slide {
+                padding: 18px 14px;
+            }
+            .slide-counter {
+                display: none;
+            }
+        }
+
+    </style>
+</head>
+<body>
+
+    <!-- Floating Top-Right Close 'X' Button -->
+    <button id="btnCloseDeck" class="close-deck-btn" onclick="exitDeck()" title="Close Presentation (Esc)">
+        <span class="close-icon">✕</span>
+        <span>Close</span>
+    </button>
+
+    <div class="stage">
+        <!-- Slide 1: Title -->
+        <div class="slide active">
+            <div class="title-slide-content">
+                <div class="hero-badge">⚡ REAL-TIME AI SENTINEL</div>
+                <div class="hero-title">LiveTruth Shield</div>
+                <div class="hero-desc">Autonomous Real-Time AI Fact-Checking Engine for Online Video Streams</div>
+                
+                <div class="grid-4" style="margin-top: 20px;">
+                    <div class="card">
+                        <span class="tag">AI Engine</span>
+                        <div class="card-title">Gemini 3.8 High</div>
+                        <div class="card-desc">Deep multi-step reasoning with thinking_level = HIGH.</div>
+                    </div>
+                    <div class="card">
+                        <span class="tag">Grounding</span>
+                        <div class="card-title">Peer-Reviewed</div>
+                        <div class="card-desc">PubMed Central, Nature, IEEE, WHO & UN databases.</div>
+                    </div>
+                    <div class="card">
+                        <span class="tag">Interface</span>
+                        <div class="card-title">YouTube HUD</div>
+                        <div class="card-desc">Scrubber heatmap ticks + Web fact-checking console.</div>
+                    </div>
+                    <div class="card">
+                        <span class="tag">Accuracy</span>
+                        <div class="card-title">ASR Immunity</div>
+                        <div class="card-desc">Zero false positives on phonetic subtitle typos.</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 2: Problem -->
+        <div class="slide">
+            <div>
+                <div class="tag">Challenge & Market Need</div>
+                <h2>The Epidemic of Online Video Misinformation</h2>
+                <div class="subtitle">Video is the world's primary communication medium, but fact-checking has remained painfully slow.</div>
+            </div>
+
+            <div class="grid-3">
+                <div class="card" style="border-top: 3px solid var(--coral);">
+                    <div class="card-icon">🚨</div>
+                    <div class="card-title">Virality Outpaces Truth</div>
+                    <div class="card-desc">False narratives diffuse 6x faster than reality on video platforms. By the time manual fact-checking articles publish 48 hours later, millions have already internalized falsehoods.</div>
+                </div>
+                <div class="card" style="border-top: 3px solid var(--amber);">
+                    <div class="card-icon">🧩</div>
+                    <div class="card-title">The Multi-Claim Trap</div>
+                    <div class="card-desc">Popular video essays mix 90% truth with 10% dangerous distortions (health pseudoscience, doctored numbers, misleading history). Viewers cannot spot the subtle fabrications.</div>
+                </div>
+                <div class="card" style="border-top: 3px solid var(--blue);">
+                    <div class="card-icon">🎙️</div>
+                    <div class="card-title">The Subtitle Phonetic Glitch</div>
+                    <div class="card-desc">Automated speech recognition frequently generates phonetic homophones (e.g. transcribing 'Seoul' as 'Soul'). Primitive AI systems hallucinate falsehoods based on phonetic typos.</div>
+                </div>
+            </div>
+
+            <div style="font-size:12px; color:var(--text-dim); text-align:right;">02 / 08 • Problem Definition</div>
+        </div>
+
+        <!-- Slide 3: Solution -->
+        <div class="slide">
+            <div>
+                <div class="tag">Product Vision</div>
+                <h2>LiveTruth Shield: Autonomous Veracity Sentinel</h2>
+                <div class="subtitle">An active AI defense layer running in-browser that audits claims second-by-second while you watch.</div>
+            </div>
+
+            <div class="grid-2">
+                <div class="card">
+                    <div class="card-title">⏱️ Autonomous Timeline Audit</div>
+                    <div class="card-desc">Extracts 8-14 chronological claims across the entire video timeline, ensuring complete analytical coverage from 00:00 to the closing statement.</div>
+                </div>
+                <div class="card">
+                    <div class="card-title">🎯 In-Video Scrubber Heatmap</div>
+                    <div class="card-desc">Injects live color-coded markers directly onto YouTube's native progress bar (Red = False, Amber = Misleading, Green = Verified) for 1-click timeline seeking.</div>
+                </div>
+                <div class="card">
+                    <div class="card-title">🏛️ Primary Authority Grounding</div>
+                    <div class="card-desc">Backs every single verdict with primary peer-reviewed literature, official institutional records, DOI links, and trial findings.</div>
+                </div>
+                <div class="card">
+                    <div class="card-title">🛡️ Speech-to-Text Homophone Immunity</div>
+                    <div class="card-desc">Built-in conceptual evaluation that understands spoken conceptual veracity and normalizes phonetic subtitle glitches.</div>
+                </div>
+            </div>
+
+            <div style="font-size:12px; color:var(--text-dim); text-align:right;">03 / 08 • Solution Overview</div>
+        </div>
+
+        <!-- Slide 4: AI Architecture -->
+        <div class="slide">
+            <div>
+                <div class="tag">AI Engine & Intelligence</div>
+                <h2>Deep Cognitive Audit via Gemini 3.8 High</h2>
+                <div class="subtitle">Utilizing Google's flagship deep-reasoning configuration to audit subtle nuances and complex claims.</div>
+            </div>
+
+            <div class="grid-2">
+                <div class="card">
+                    <div class="card-title" style="color:var(--cyan);">Multi-Tier Resilient Architecture</div>
+                    <div class="card-desc">
+                        <p style="margin-bottom:8px;"><strong>Tier 1: Gemini 3.8 High + Google Search:</strong> Active reasoning depth with live scientific search grounding.</p>
+                        <p style="margin-bottom:8px;"><strong>Tier 2: High Reasoning Direct Knowledge:</strong> Autonomous deep knowledge verification if search quotas are reached.</p>
+                        <p><strong>Tier 3: Graceful Failover:</strong> Sub-second fallback across Gemini 3.8 Live and Gemini 3.1 Flash-Lite ensures 100% operational uptime.</p>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-title" style="color:var(--emerald);">Why 'thinking_level = HIGH' is Essential</div>
+                    <div class="card-desc">
+                        <p style="margin-bottom:8px;">✔ <strong>Deconstructs Multi-Part Fallacies:</strong> Evaluates causal logic where isolated numbers are real but conclusions are fake.</p>
+                        <p style="margin-bottom:8px;">✔ <strong>Phonetic Intent Reconstruction:</strong> Separates spoken reality from subtitle typos.</p>
+                        <p style="margin-bottom:8px;">✔ <strong>Synthesizes Primary Trials:</strong> Verifies medical consensus over marketing blogs.</p>
+                        <p>✔ <strong>Weighted Veracity Scoring:</strong> Computes a calibrated Truth Reliability Index (0-100%).</p>
+                    </div>
+                </div>
+            </div>
+
+            <div style="font-size:12px; color:var(--text-dim); text-align:right;">04 / 08 • AI Architecture</div>
+        </div>
+
+        <!-- Slide 5: System Architecture -->
+        <div class="slide">
+            <div>
+                <div class="tag">Technical Blueprint</div>
+                <h2>End-to-End System Architecture</h2>
+                <div class="subtitle">Seamless real-time synchronization between browser DOM, FastAPI backend, and Gemini 3.8.</div>
+            </div>
+
+            <div class="grid-4" style="grid-template-columns: repeat(5, 1fr);">
+                <div class="card">
+                    <span class="tag">Step 1</span>
+                    <div class="card-title">Video Ingestion</div>
+                    <div class="card-desc">Detects active YouTube video ID or accepts local MP4/MKV drag & drop stream.</div>
+                </div>
+                <div class="card">
+                    <span class="tag">Step 2</span>
+                    <div class="card-title">Dialogue Fetch</div>
+                    <div class="card-desc">Fetches timestamped captions via YouTubeTranscriptApi or extracts audio track.</div>
+                </div>
+                <div class="card">
+                    <span class="tag">Step 3</span>
+                    <div class="card-title">Gemini Reasoning</div>
+                    <div class="card-desc">Dispatches dialogue with Anti-Pedantry and Empirical Accuracy rules to Gemini 3.8.</div>
+                </div>
+                <div class="card">
+                    <span class="tag">Step 4</span>
+                    <div class="card-title">Live Grounding</div>
+                    <div class="card-desc">Cross-references PubMed, IEEE, Nature, and institutional databases.</div>
+                </div>
+                <div class="card">
+                    <span class="tag">Step 5</span>
+                    <div class="card-title">HUD Overlay</div>
+                    <div class="card-desc">Draws scrubber ticks, animated truth gauge, and real-time claim cards.</div>
+                </div>
+            </div>
+
+            <div style="font-size:12px; color:var(--text-dim); text-align:right;">05 / 08 • System Architecture</div>
+        </div>
+
+        <!-- Slide 6: Institutional Sourcing -->
+        <div class="slide">
+            <div>
+                <div class="tag">Academic & Scientific Consensus</div>
+                <h2>Rigorous Institutional Sourcing</h2>
+                <div class="subtitle">LiveTruth Shield rejects unverified blog posts in favor of primary, peer-reviewed records.</div>
+            </div>
+
+            <div class="grid-2">
+                <div class="card">
+                    <div class="card-title" style="color:var(--emerald);">Medicine, Health & Biology</div>
+                    <div class="card-desc">• PubMed Central (PMC) & NIH<br>• The Lancet & Nature Medicine<br>• World Health Organization (WHO)<br>• Mayo Clinic & CDC</div>
+                </div>
+                <div class="card">
+                    <div class="card-title" style="color:var(--cyan);">Physics, Space & Technology</div>
+                    <div class="card-desc">• IEEE Xplore Digital Library<br>• Nature, Science & Physical Review<br>• NASA Astrophysics Data System (ADS)<br>• MIT Technology Review</div>
+                </div>
+                <div class="card">
+                    <div class="card-title" style="color:var(--blue);">Economics & Governance</div>
+                    <div class="card-desc">• World Bank & IMF Databases<br>• Federal Reserve Economic Data (FRED)<br>• U.S. Securities & Exchange Commission (SEC)</div>
+                </div>
+                <div class="card">
+                    <div class="card-title" style="color:var(--amber);">History & Geography</div>
+                    <div class="card-desc">• United Nations Member States Database<br>• Encyclopedia Britannica<br>• National Geographic Society & National Cartography</div>
+                </div>
+            </div>
+
+            <div style="font-size:12px; color:var(--text-dim); text-align:right;">06 / 08 • Sourcing Framework</div>
+        </div>
+
+        <!-- Slide 7: Roadmap -->
+        <div class="slide">
+            <div>
+                <div class="tag">Next Horizons</div>
+                <h2>Strategic Advancements & Roadmap</h2>
+                <div class="subtitle">Expanding from audio transcript verification to comprehensive multimodal veracity intelligence.</div>
+            </div>
+
+            <div class="grid-2">
+                <div class="card">
+                    <div class="card-title">💬 "Ask Gemini" In-Player Assistant</div>
+                    <div class="card-desc">Slide-out conversational drawer allowing viewers to ask follow-up questions in real time directly grounded in the video's claims.</div>
+                </div>
+                <div class="card">
+                    <div class="card-title">🏷️ Logical Fallacy Tagging</div>
+                    <div class="card-desc">Expanding beyond FALSE/VERIFIED to pinpoint exact manipulation tactics: Cherry-Picking, Out-of-Context Quotes, and False Equivalence.</div>
+                </div>
+                <div class="card">
+                    <div class="card-title">👁️ Multimodal OCR & Chart Verification</div>
+                    <div class="card-desc">Using Gemini Vision to inspect on-screen infographics, inverted Y-axes, truncated graphs, and doctored social media screenshots.</div>
+                </div>
+                <div class="card">
+                    <div class="card-title">📈 Creator Veracity Index</div>
+                    <div class="card-desc">Aggregating historical claims across YouTube channels to display a long-term credibility scorecard next to the channel subscribe button.</div>
+                </div>
+            </div>
+
+            <div style="font-size:12px; color:var(--text-dim); text-align:right;">07 / 08 • Product Roadmap</div>
+        </div>
+
+        <!-- Slide 8: Conclusion -->
+        <div class="slide">
+            <div class="title-slide-content">
+                <div class="hero-badge">CONCLUSION</div>
+                <div class="hero-title" style="font-size: 42px;">Restoring Truth in the Age of Digital Video</div>
+                <div class="hero-desc" style="font-size: 16px;">LiveTruth Shield empowers viewers with real-time, peer-reviewed empirical truth right as they watch.</div>
+
+                <div class="card" style="margin-top: 10px; background: rgba(59, 130, 246, 0.08); border-color: rgba(59, 130, 246, 0.3);">
+                    <div class="card-desc" style="font-size: 15px; color: #FFFFFF; line-height: 1.8;">
+                        ✔ <strong>Autonomous Real-Time Sentinel:</strong> Zero latency Chrome extension + Full web analytics console.<br>
+                        ✔ <strong>Gemini 3.8 High Reasoning:</strong> Deep internal planning, speech-to-text homophone immunity, and multi-tier fallback.<br>
+                        ✔ <strong>Open Institutional Consensus:</strong> Backed by PubMed, IEEE, NASA, and United Nations primary literature.<br>
+                        ✔ <strong>Production Ready:</strong> Live on localhost:5000 with sub-second caching.
+                    </div>
+                </div>
+            </div>
+            <div style="font-size:12px; color:var(--text-dim); text-align:right;">08 / 08 • Summary</div>
+        </div>
+    </div>
+
+    <!-- Navigation Bar -->
+    <div class="controls">
+        <div class="btn-group">
+            <button class="nav-btn" onclick="prevSlide()">◀ Previous</button>
+            <button class="nav-btn" onclick="nextSlide()">Next ▶</button>
+        </div>
+
+        <div class="slide-counter" id="counter">Slide 1 of 8</div>
+
+        <div class="btn-group">
+            <span style="font-size:12px; color:var(--text-dim); margin-right:8px; display:inline-flex; align-items:center;">Use ← → keys</span>
+            <a href="LiveTruth_Shield_Presentation.pptx" download class="download-btn">📥 Download .PPTX</a>
+        </div>
+    </div>
+
+    <script>
+        const slides = document.querySelectorAll('.slide');
+        let currentIdx = 0;
+
+        function showSlide(idx) {
+            slides[currentIdx].classList.remove('active');
+            currentIdx = (idx + slides.length) % slides.length;
+            slides[currentIdx].classList.add('active');
+            document.getElementById('counter').innerText = `Slide ${currentIdx + 1} of ${slides.length}`;
+        }
+
+        function nextSlide() { showSlide(currentIdx + 1); }
+        function prevSlide() { showSlide(currentIdx - 1); }
+
+
+        function exitDeck() {
+            if (window.parent && window.parent !== window) {
+                window.parent.postMessage({ type: 'CLOSE_PPT' }, '*');
+                try {
+                    if (typeof window.parent.closePptModal === 'function') {
+                        window.parent.closePptModal();
+                    }
+                } catch(e) {}
+            } else if (window.opener) {
+                window.close();
+            } else if (window.history.length > 1) {
+                window.history.back();
+            } else {
+                window.location.href = '/';
+            }
+        }
+
+        
+        // Touch Swipe Navigation for Mobile
+        let touchStartX = 0;
+        let touchEndX = 0;
+        document.addEventListener('touchstart', (e) => {
+            touchStartX = e.changedTouches[0].screenX;
+        }, { passive: true });
+        document.addEventListener('touchend', (e) => {
+            touchEndX = e.changedTouches[0].screenX;
+            handleSwipe();
+        }, { passive: true });
+
+        function handleSwipe() {
+            const swipeDistance = touchEndX - touchStartX;
+            if (Math.abs(swipeDistance) > 45) {
+                if (swipeDistance < 0) {
+                    nextSlide(); // Swipe Left -> Next
+                } else {
+                    prevSlide(); // Swipe Right -> Prev
+                }
+            }
+        }
+
+        window.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowRight' || e.key === ' ') { nextSlide(); }
+            else if (e.key === 'ArrowLeft') { prevSlide(); }
+            else if (e.key === 'Escape') { exitDeck(); }
+        });
+    </script>
+</body>
+</html>
