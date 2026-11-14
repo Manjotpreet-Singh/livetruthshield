@@ -50,57 +50,19 @@ from youtube_transcript_api import YouTubeTranscriptApi
 
 
 from dotenv import load_dotenv
-
-
-
-
-
-
+import httpx
 
 dotenv_path = os.path.join(os.path.dirname(__file__), ".env")
-
-
-
 load_dotenv(dotenv_path)
 
+import sys
+backend_dir = os.path.dirname(os.path.abspath(__file__))
+if backend_dir not in sys.path:
+    sys.path.insert(0, backend_dir)
 
+import ai_engine
 
-
-
-
-
-Features_Available = False
-
-
-
-try:
-
-
-
-    from google import genai
-
-
-
-    from google.genai import types
-
-
-
-    Features_Available = True
-
-
-
-except ImportError:
-
-
-
-    print("[!] google-genai not yet installed. Run: pip install -r requirements.txt")
-
-
-
-
-
-
-
+Features_Available = ai_engine.Features_Available
 app = FastAPI(title="LiveTruth Shield API", version="1.0.0")
 
 
@@ -161,35 +123,8 @@ app.add_middleware(
 
 
 
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
-
-
-
-client = None
-
-
-
-if Features_Available and GEMINI_API_KEY:
-
-
-
-    try:
-
-
-
-        client = genai.Client(api_key=GEMINI_API_KEY)
-
-
-
-        print("[+] Gemini client initialized successfully with API key.")
-
-
-
-    except Exception as e:
-
-
-
-        print(f"[WARNING] Could not initialize Gemini client: {e}")
+GEMINI_API_KEY = ai_engine.GEMINI_API_KEY
+client = ai_engine.genai_client
 
 
 
@@ -260,1137 +195,6 @@ def extract_video_id_and_title(url_or_id: str, title: str = "") -> tuple[str, st
 def extract_video_id(url_or_id: str) -> str:
     vid, _ = extract_video_id_and_title(url_or_id, "")
     return vid
-
-def get_fallback_demo_data(query_info="", video_id=""):
-
-    title_clean = (query_info or "").strip()
-
-    if title_clean.lower() in ["live video", "youtube", "video", ""]:
-
-        title_clean = "Active Video Stream"
-
-    t_lower = title_clean.lower()
-
-
-
-    # Category 0: Smartphones, Hardware & Consumer Electronics (Samsung Galaxy, S24, S25, iPhone)
-    if any(k in t_lower for k in ["samsung", "galaxy", "s24", "s25", "s26", "smartphone", "iphone", "pixel", "flagship", "snapdragon", "exynos", "unboxing", "phone review"]):
-        score = 68
-        intel = f"Hardware generation audit for \"{title_clean}\". Identified outdated generational claims regarding the Galaxy S24 series, alongside verified display and processor architecture specifications."
-        cards = [
-            {
-                "verdict": "MISLEADING",
-                "timestamp": "00:24",
-                "seconds": 24,
-                "quote": "The Samsung Galaxy S24 is the latest flagship smartphone from Samsung.",
-                "explanation": "Outdated product claim. The Galaxy S24 series launched in January 2024. Samsung officially launched the Galaxy S25 series (S25, S25+, and S25 Ultra) in January 2025 powered by the Snapdragon 8 Elite platform, making the S24 a previous-generation device.",
-                "source": "Samsung Electronics Official Newsroom / GSMArena",
-                "sourceUrl": "https://news.samsung.com/global/samsung-galaxy-s25-series",
-                "researchPaper": "Samsung Electronics: Annual Flagship Mobile Architecture Release Schedule",
-                "researchSummary": "Samsung transitioned its primary S-series flagship tier from S24 to S25 in Q1 2025, integrating 3nm application processors.",
-                "dataOrigin": "Samsung Global Newsroom & Regulatory Product Filings",
-                "fallacy": "Outdated Information / Stale Premise",
-                "consensus": "Universal Consensus",
-                "abstractPreview": "Product certification registries and manufacturer disclosures confirm the commercial launch of the Galaxy S25 line in early 2025, superseding the S24 generation."
-            },
-            {
-                "verdict": "VERIFIED",
-                "timestamp": "01:05",
-                "seconds": 65,
-                "quote": "The Galaxy S24 Ultra features a titanium exterior frame and 2600 nits peak display brightness.",
-                "explanation": "DisplayMate lab photometric tests and teardown analyses confirm the Galaxy S24 Ultra incorporates a Grade 2 titanium side rail and Dynamic AMOLED 2X panel peaking at 2,600 nits under high ambient lux.",
-                "source": "DisplayMate Technologies / PBKreviews",
-                "sourceUrl": "https://www.displaymate.com",
-                "researchPaper": "Society for Information Display (SID): Low-Reflectance Anti-Glare Glass in OLED Displays",
-                "researchSummary": "Gorilla Armor glass reduces surface reflections by 75% while achieving 2,600 nits peak luminance in HDR highlights.",
-                "dataOrigin": "DisplayMate Display Technology Shoot-Out",
-                "fallacy": "None",
-                "consensus": "Universal Consensus",
-                "abstractPreview": "Laboratory spectroradiometer tests verify peak outdoor brightness exceeding 2,550 nits with Corning Gorilla Armor optical reflection damping."
-            },
-            {
-                "verdict": "FALSE",
-                "timestamp": "02:18",
-                "seconds": 138,
-                "quote": "Galaxy AI on-device processing executes all image generation and audio translations 100% offline without cloud connectivity.",
-                "explanation": "While basic translation operates via on-device neural models, complex generative photo editing and advanced summarization explicitly leverage cloud-based Google Gemini foundational models and require active network authentication.",
-                "source": "Samsung Security & Privacy Whitepaper",
-                "sourceUrl": "https://www.samsung.com/us/security",
-                "researchPaper": "ACM Conference on Embedded Networked Sensor Systems (SenSys): Hybrid On-Device & Cloud AI Offloading",
-                "researchSummary": "Modern smartphone architectures partition multimodal models: lightweight inference executes on NPU, while generative diffusion requires cloud API calls.",
-                "dataOrigin": "Samsung Knox Security Architecture Documentation",
-                "fallacy": "Oversimplification / Marketing Exaggeration",
-                "consensus": "Universal Consensus",
-                "abstractPreview": "Technical architecture analyses demonstrate that cloud endpoints are mandatory for photo generative inpainting and text synthesis on Galaxy AI."
-            },
-            {
-                "verdict": "VERIFIED",
-                "timestamp": "03:40",
-                "seconds": 220,
-                "quote": "The Galaxy S24 was the first Samsung smartphone guaranteed to receive seven years of Android OS and security updates.",
-                "explanation": "Samsung officially committed to seven generations of OS upgrades and seven years of security updates starting with the Galaxy S24 series launched in 2024, extending support through 2031.",
-                "source": "Android Open Source Project (AOSP) / Samsung Policy",
-                "sourceUrl": "https://news.samsung.com/global",
-                "researchPaper": "IEEE Software: Long-Term Enterprise OS Maintenance Models for Connected Consumer Hardware",
-                "researchSummary": "Extended 7-year kernel and firmware patch lifecycles dramatically reduce planned obsolescence in consumer mobile devices.",
-                "dataOrigin": "Samsung Software Support Policy Commitments",
-                "fallacy": "None",
-                "consensus": "Universal Consensus",
-                "abstractPreview": "Official corporate release notes confirm extended 7-year firmware and security maintenance guarantees through 2031."
-            }
-        ]
-        return {"score": score, "intel": intel, "cards": cards}
-
-    # Category 1: Podcasts / Social Media / Interviews / Mental Health
-    elif any(k in t_lower for k in ["podcast", "interview", "instagram", "social media", "tiktok", "holland", "talk", "episode", "mental health", "anxiety", "depression"]):
-
-        score = 64
-
-        intel = f"High-sensitivity fact-check on social media, neurochemistry, and mental health claims in \"{title_clean}\". Identified 4 verified assertions, 3 false neurological claims, and 2 misleading statistics."
-
-        cards = [
-
-            {
-
-                "verdict": "VERIFIED",
-
-                "timestamp": "00:15",
-
-                "seconds": 15,
-
-                "quote": "Deleting algorithmic feed apps dramatically lowers daily cortisol and distraction triggers.",
-
-                "explanation": "Randomized controlled trials confirm that removing hyper-stimulating social feeds reduces salivary cortisol levels by 23% and reduces subjective cognitive fatigue within 5 days.",
-
-                "source": "American Psychological Association (APA)",
-
-                "sourceUrl": "https://www.apa.org/news/press/releases/2023/02/social-media-mental-health",
-
-                "researchPaper": "Journal of Social and Clinical Psychology: No More FOMO - Limiting Social Media Decreases Loneliness and Depression",
-
-                "researchSummary": "Limiting use to 30 minutes daily yielded clinically significant reductions in depression and anxiety scores (p < 0.001).",
-
-                "dataOrigin": "APA PsycNet",
-                "fallacy": "None",
-                "consensus": "Universal Consensus",
-                "abstractPreview": "Longitudinal psychiatric trials demonstrate that parasocial celebrity attachments reflect typical human narrative empathy rather than clinical pathology."
-            },
-
-            {
-
-                "verdict": "FALSE",
-
-                "timestamp": "00:48",
-
-                "seconds": 48,
-
-                "quote": "Deleting social media permanently resets human dopamine receptor density to zero within 24 hours.",
-
-                "explanation": "Dopamine D2 receptor upregulation in the ventral striatum is a slow homeostatic process requiring 3 to 6 weeks of sustained behavioral change. The concept of an instantaneous '24-hour dopamine reset' is a pervasive biological fallacy.",
-
-                "source": "Nature Neuroscience",
-
-                "sourceUrl": "https://www.nature.com/neuro",
-
-                "researchPaper": "Nature Neuroscience: Striatal Dopamine D2 Receptor Dynamics & Synaptic Plasticity",
-
-                "researchSummary": "Receptor density recovery in human PET scans requires minimum 21 days of abstinence from habituated reward stimuli.",
-
-                "dataOrigin": "PubMed Central (PMC7341200)",
-                "fallacy": "Pseudoscience / Oversimplification",
-                "consensus": "Universal Consensus",
-                "abstractPreview": "PET imaging demonstrates striatal dopamine D2 receptor density restoration requires a minimum of 21 days of chronic behavioral modification, proving the 24-hour reset claim biochemically invalid."
-            },
-
-            {
-
-                "verdict": "MISLEADING",
-
-                "timestamp": "01:25",
-
-                "seconds": 85,
-
-                "quote": "Standard smartphone display blue light causes irreversible retinal photoreceptor macular degeneration.",
-
-                "explanation": "The American Academy of Ophthalmology confirms illumination irradiance from consumer smartphone screens (approx. 50-100 lux) is millions of times weaker than natural daylight and cannot induce retinal photochemical damage.",
-
-                "source": "American Academy of Ophthalmology (AAO)",
-
-                "sourceUrl": "https://www.aao.org/eye-health/tips-prevention/should-you-be-worried-about-blue-light",
-
-                "researchPaper": "Ophthalmology: Light Emissions of Consumer Devices and Retinal Hazard Functions",
-
-                "researchSummary": "Photopic luminance from digital displays falls 3 orders of magnitude below the ANSI Z136.1 retinal thermal damage threshold.",
-
-                "dataOrigin": "PubMed Central (PMC6288536)",
-                "fallacy": "Panic Bait / Exaggerated Risk",
-                "consensus": "Universal Consensus",
-                "abstractPreview": "ANSI Z136.1 radiometric testing confirms consumer device spectral emissions lack sufficient irradiance to trigger photochemical retinal damage."
-            },
-
-            {
-
-                "verdict": "VERIFIED",
-
-                "timestamp": "02:08",
-
-                "seconds": 128,
-
-                "quote": "Checking push notifications over 50 times per day fragments working memory and cognitive focus.",
-
-                "explanation": "Cognitive psychology research proves that intermittent notification interruptions create cognitive residue, requiring up to 23 minutes to fully regain deep task immersion.",
-
-                "source": "MIT Technology Review / ACM",
-
-                "sourceUrl": "https://www.technologyreview.com",
-
-                "researchPaper": "ACM CHI: The Cost of Interruption - A Comparison of Multiple Interruption Types",
-
-                "researchSummary": "Interrupted knowledge workers take significantly longer to complete tasks and experience doubled error rates on complex reasoning tasks.",
-
-                "dataOrigin": "ACM Digital Library",
-                "fallacy": "None",
-                "consensus": "Universal Consensus",
-                "abstractPreview": "ACM empirical studies confirm intermittent notification disruption fragments working memory buffers, introducing average 23-minute task resumption overhead."
-            },
-
-            {
-
-                "verdict": "FALSE",
-
-                "timestamp": "03:12",
-
-                "seconds": 192,
-
-                "quote": "Human multi-tasking between messaging and analytical work increases total brain output by 40%.",
-
-                "explanation": "Cognitive neuroscience proves the human prefrontal cortex cannot process parallel linguistic streams. Task-switching introduces an automatic 'switch cost', burning glucose and lowering cognitive productivity by up to 40%.",
-
-                "source": "Stanford Cognitive Science",
-
-                "sourceUrl": "https://news.stanford.edu/2009/08/24/multitask-research-study-082409/",
-
-                "researchPaper": "Proceedings of the National Academy of Sciences (PNAS): Cognitive Control in Media Multitaskers",
-
-                "researchSummary": "Chronic media multitaskers perform significantly worse on filtering irrelevant environmental stimuli and memory retrieval tests.",
-
-                "dataOrigin": "PNAS Digital Repository",
-                "fallacy": "False Equivalence / Myth",
-                "consensus": "Universal Consensus",
-                "abstractPreview": "Prefrontal cortex neuroimaging proves executive cognitive control degrades under parallel linguistic task loads, inducing measurable cognitive switch penalties."
-            },
-
-            {
-
-                "verdict": "MISLEADING",
-
-                "timestamp": "04:35",
-
-                "seconds": 275,
-
-                "quote": "Parasocial emotional bonds with celebrities are officially diagnosed as acute psychiatric disorders.",
-
-                "explanation": "Parasocial interaction (PSI) is categorized in psychological literature as a normal, widespread human socio-cognitive phenomenon, not a diagnosable psychiatric pathology in the DSM-5 or ICD-11.",
-
-                "source": "American Psychiatric Association",
-
-                "sourceUrl": "https://www.psychiatry.org",
-
-                "researchPaper": "Journal of Social and Clinical Psychology: Deconstructing Parasocial Interaction",
-
-                "researchSummary": "Parasocial bonding mirrors normative face-to-face attachment heuristics and is not classified as an axis pathology in DSM-5-TR.",
-
-                "dataOrigin": "APA PsycNet"
-
-            },
-
-            {
-
-                "verdict": "VERIFIED",
-
-                "timestamp": "05:50",
-
-                "seconds": 350,
-
-                "quote": "Blue-light wavelength exposure between 460-480nm suppresses pineal melatonin secretion by over 50%.",
-
-                "explanation": "Intrinsically photosensitive retinal ganglion cells (ipRGCs) expressing melanopsin exhibit peak spectral sensitivity at 480nm, directly inhibiting pineal gland melatonin synthesis via the retinohypothalamic tract.",
-
-                "source": "Journal of Pineal Research",
-
-                "sourceUrl": "https://onlinelibrary.wiley.com/journal/1600079x",
-
-                "researchPaper": "Journal of Clinical Endocrinology & Metabolism: Phase-Shifting Human Circadian Rhythms via Narrowband Light",
-
-                "researchSummary": "Exposure to 460nm light suppresses nocturnal melatonin twice as effectively as 555nm green light of equivalent photon density.",
-
-                "dataOrigin": "PubMed Central (PMC1490062)"
-
-            },
-
-            {
-
-                "verdict": "FALSE",
-
-                "timestamp": "07:15",
-
-                "seconds": 435,
-
-                "quote": "Reading digital text on a screen reduces informational retention by 50% compared to paper.",
-
-                "explanation": "Meta-analyses across 54 studies (covering 171,055 participants) demonstrate the 'screen inferiority effect' accounts for a modest difference of d = -0.21 standard deviations, not a 50% collapse in comprehension.",
-
-                "source": "Educational Research Review",
-
-                "sourceUrl": "https://www.sciencedirect.com/journal/educational-research-review",
-
-                "researchPaper": "Educational Research Review: Reading on Paper vs. Screens - A Meta-Analysis",
-
-                "researchSummary": "Comprehension differences depend heavily on time constraints; under self-paced conditions, factual recall between digital and paper is statistically comparable.",
-
-                "dataOrigin": "ScienceDirect"
-
-            }
-
-        ]
-
-
-
-    # Category 2: Cinema / VFX / Trailers / Marvel / Movies
-
-    elif any(k in t_lower for k in ["avenger", "marvel", "doom", "trailer", "teaser", "movie", "cinema", "hindi", "film", "series", "hollywood", "bollywood", "batman", "superman"]):
-
-        score = 68
-
-        intel = f"Rigorous cinematic and audiovisual physics audit for \"{title_clean}\". Verified 3 high-end cinema engineering claims, debunked 3 major physical/biological fallacies, and identified 2 misleading theatrical statements."
-
-        cards = [
-
-            {
-
-                "verdict": "VERIFIED",
-
-                "timestamp": "00:08",
-
-                "seconds": 8,
-
-                "quote": "Shot natively with high-dynamic range large-format digital cinema sensor arrays.",
-
-                "explanation": "Principal photography utilized ARRI Alexa 65 large-format sensor arrays delivering 6.5K native resolution and 14+ stops of dynamic range.",
-
-                "source": "American Cinematographer",
-
-                "sourceUrl": "https://ascmag.com",
-
-                "researchPaper": "SMPTE Motion Imaging Journal: Large-Format Sensor Architectures",
-
-                "researchSummary": "Large-format digital cinema arrays minimize optical aberration and deliver 14.5 stops of dynamic range with sub-pixel chroma fidelity.",
-
-                "dataOrigin": "SMPTE Digital Archive"
-
-            },
-
-            {
-
-                "verdict": "FALSE",
-
-                "timestamp": "00:26",
-
-                "seconds": 26,
-
-                "quote": "Acute exposure to high-intensity gamma rays triggers somatic cellular expansion into mutated green dermal tissue.",
-
-                "explanation": "In radiation biophysics, ionizing gamma radiation induces fatal double-strand DNA cleavage and acute radiation syndrome (ARS), causing apoptosis rather than controlled cellular hypertrophy.",
-
-                "source": "NIH / National Cancer Institute",
-
-                "sourceUrl": "https://www.cancer.gov/about-cancer/causes-prevention/risk/radiation",
-
-                "researchPaper": "Radiobiology for the Radiologist (8th Ed.), Hall & Giaccia",
-
-                "researchSummary": "Ionizing gamma photons cleave phosphodiester bonds, activating p53-dependent cell death cascades with 0% probability of muscular hypertrophy.",
-
-                "dataOrigin": "PubMed Central (PMC8492011)"
-
-            },
-
-            {
-
-                "verdict": "MISLEADING",
-
-                "timestamp": "00:46",
-
-                "seconds": 46,
-
-                "quote": "Exclusively projected in 70mm photochemical film across all global IMAX auditoriums.",
-
-                "explanation": "Over 92% of commercial IMAX multiplexes globally deploy dual 4K laser digital projection systems rather than 15-perf 70mm photochemical film projectors.",
-
-                "source": "SMPTE Standards Repository",
-
-                "sourceUrl": "https://www.smpte.org",
-
-                "researchPaper": "SMPTE Digital Cinema System Specification v1.4",
-
-                "researchSummary": "Commercial exhibition shifted to dual 4K laser engines with high-contrast prisms, with 70mm film limited to fewer than 30 institutional screens worldwide.",
-
-                "dataOrigin": "SMPTE Technical Archive"
-
-            },
-
-            {
-
-                "verdict": "VERIFIED",
-
-                "timestamp": "01:05",
-
-                "seconds": 65,
-
-                "quote": "Volumetric markerless motion capture tracks facial muscle micro-expressions in sub-millimeter precision.",
-
-                "explanation": "High-speed multi-camera optical photogrammetry arrays solve dense 3D facial topology at 0.2mm spatial tolerance.",
-
-                "source": "IEEE Transactions on Pattern Analysis",
-
-                "sourceUrl": "https://ieeexplore.ieee.org",
-
-                "researchPaper": "IEEE TPAMI: High-Fidelity Facial Performance Capture, 2024",
-
-                "researchSummary": "Multi-view neural optical flow coupled with deep non-rigid shape priors reconstructs micro-expression deformation dynamics in real time.",
-
-                "dataOrigin": "IEEE Xplore Digital Library"
-
-            },
-
-            {
-
-                "verdict": "FALSE",
-
-                "timestamp": "01:28",
-
-                "seconds": 88,
-
-                "quote": "Concussive acoustic shockwaves detonate and travel through interstellar vacuum at supersonic velocity.",
-
-                "explanation": "Acoustic sound is a mechanical compression wave requiring physical particle collisions. Interstellar space has a particle density under 1 atom/cm3, making sound propagation physically impossible.",
-
-                "source": "NASA Goddard Space Flight Center",
-
-                "sourceUrl": "https://www.nasa.gov",
-
-                "researchPaper": "Astrophysical Journal: Particle Density & Wave Cutoffs in Interstellar Media",
-
-                "researchSummary": "Without a molecular continuum above the Debye acoustic threshold, mechanical sound waves cannot generate or propagate in space.",
-
-                "dataOrigin": "NASA Astrophysics Data System"
-
-            },
-
-            {
-
-                "verdict": "FALSE",
-
-                "timestamp": "01:48",
-
-                "seconds": 108,
-
-                "quote": "Tachyon energy conduits manipulate quantum spacetime to reverse localized thermodynamic entropy.",
-
-                "explanation": "Tachyons are hypothetical mathematical constructs with imaginary mass that violate the Second Law of Thermodynamics and Einsteinian causality.",
-
-                "source": "Physical Review Letters / CERN",
-
-                "sourceUrl": "https://journals.aps.org/prl",
-
-                "researchPaper": "Physical Review D: Causality Constraints on Superluminal Lorentz-Violating Fields",
-
-                "researchSummary": "Local thermodynamic entropy dS >= 0 remains strictly non-decreasing across all verified quantum field theories.",
-
-                "dataOrigin": "CERN Document Server"
-
-            },
-
-            {
-
-                "verdict": "MISLEADING",
-
-                "timestamp": "02:10",
-
-                "seconds": 130,
-
-                "quote": "Digital Dolby Atmos spatial audio reproduces infinite independent audio objects simultaneously.",
-
-                "explanation": "Dolby Atmos theatrical rendering hardware supports a maximum ceiling of 128 simultaneous dynamic audio tracks (including 9.1 beds and 118 panning objects), not an unconstrained infinite pool.",
-
-                "source": "Audio Engineering Society (AES)",
-
-                "sourceUrl": "https://www.aes.org",
-
-                "researchPaper": "AES Convention Paper: Object-Based Audio Architecture in Theatrical Rendering",
-
-                "researchSummary": "DSP rendering limitations cap concurrent positional coordinate calculations at 128 discreet audio channels.",
-
-                "dataOrigin": "AES E-Library"
-
-            },
-
-            {
-
-                "verdict": "VERIFIED",
-
-                "timestamp": "02:35",
-
-                "seconds": 155,
-
-                "quote": "High-frame-rate 120 FPS high-shutter capture reduces motion blur and strobing during rapid kinetic action.",
-
-                "explanation": "Temporal sampling at 120 Hz reduces sample-and-hold motion judder by over 60% compared to traditional 24 fps cinematic cadence.",
-
-                "source": "SMPTE Standards Committee",
-
-                "sourceUrl": "https://www.smpte.org",
-
-                "researchPaper": "SMPTE Engineering Guideline: High Frame Rate Video for Cinema Systems",
-
-                "researchSummary": "Subjective human flicker fusion thresholds easily resolve 120 Hz motion continuity improvements in fast panning scenes.",
-
-                "dataOrigin": "SMPTE Digital Library"
-
-            }
-
-        ]
-
-
-
-    # Category 3: Health / Nutrition / Biology / Medicine
-
-    elif any(k in t_lower for k in ["health", "diet", "water", "food", "fasting", "cancer", "workout", "fitness", "doctor", "brain", "sleep", "sugar", "weight"]):
-
-        score = 62
-
-        intel = f"Rigorous biomedical audit for \"{title_clean}\". Identified 3 verified clinical findings, 3 severe medical misconceptions, and 2 deceptive nutritional claims."
-
-        cards = [
-
-            {
-
-                "verdict": "VERIFIED",
-
-                "timestamp": "00:15",
-
-                "seconds": 15,
-
-                "quote": "Time-restricted feeding stimulates cellular autophagy and enhances insulin sensitivity.",
-
-                "explanation": "Cellular nutrient deprivation activates AMPK and inhibits mTORC1, accelerating lysosomal recycling of damaged organelles and enhancing insulin receptor responsiveness.",
-
-                "source": "Cell Metabolism",
-
-                "sourceUrl": "https://www.cell.com/cell-metabolism",
-
-                "researchPaper": "Cell Metabolism: Autophagy Induction via AMPK Activation (Vol. 32)",
-
-                "researchSummary": "Intermittent metabolic switching increases ketone bodies and upregulates cellular antioxidant defenses.",
-
-                "dataOrigin": "PubMed Central (PMC7877980)"
-
-            },
-
-            {
-
-                "verdict": "FALSE",
-
-                "timestamp": "00:42",
-
-                "seconds": 42,
-
-                "quote": "Consuming 10 liters of pure distilled water daily purges renal toxins and heavy metals.",
-
-                "explanation": "Excessive rapid water ingestion overwhelms maximal renal excretion capacity (approx. 800-1000 mL/hr), inducing acute dilutional hyponatremia and fatal cerebral edema.",
-
-                "source": "The Lancet",
-
-                "sourceUrl": "https://www.thelancet.com",
-
-                "researchPaper": "The Lancet Nephrology: Acute Dilutional Hyponatremia & Osmotic Shifts",
-
-                "researchSummary": "Serum sodium drops below 120 mEq/L create osmotic gradients driving rapid cerebral swelling.",
-
-                "dataOrigin": "PubMed Central (PMC6541290)"
-
-            },
-
-            {
-
-                "verdict": "VERIFIED",
-
-                "timestamp": "01:10",
-
-                "seconds": 70,
-
-                "quote": "Adult hippocampal neurogenesis continues in the subgranular zone throughout the human lifespan.",
-
-                "explanation": "Stereological immuno-labeling of Doublecortin (DCX) and mature neuronal markers demonstrates ongoing formation of new granule cells in healthy human brains well into the 9th decade.",
-
-                "source": "Nature Medicine",
-
-                "sourceUrl": "https://www.nature.com/nm",
-
-                "researchPaper": "Nature Medicine: Evidence for Human Adult Neurogenesis, 2023",
-
-                "researchSummary": "Thousands of immature DCX-positive neuroblasts reside in the adult dentate gyrus supporting synaptic plasticity.",
-
-                "dataOrigin": "Nature Publishing Group"
-
-            },
-
-            {
-
-                "verdict": "FALSE",
-
-                "timestamp": "01:38",
-
-                "seconds": 98,
-
-                "quote": "Transdermal detox foot pads extract systemic metabolic waste and heavy metals through plantar pores.",
-
-                "explanation": "Laboratory gas chromatography reveals the dark coloration of used patches is solely an abiotic chemical oxidation reaction between moisture and pyroligneous wood vinegar powder.",
-
-                "source": "Mayo Clinic",
-
-                "sourceUrl": "https://www.mayoclinic.org",
-
-                "researchPaper": "Mayo Clinic Clinical Review: Evaluation of Detoxification Claims",
-
-                "researchSummary": "Excreted sweat contains 99% water and trace sodium; sweat glands lack transport proteins required to filter systemic heavy metals.",
-
-                "dataOrigin": "Mayo Clinic Research Library"
-
-            },
-
-            {
-
-                "verdict": "MISLEADING",
-
-                "timestamp": "02:14",
-
-                "seconds": 134,
-
-                "quote": "Consuming raw apple cider vinegar melts visceral abdominal fat tissue without caloric deficit.",
-
-                "explanation": "Clinical trials show acetic acid slightly delays gastric emptying, but exhibits zero lipolytic mechanism to dissolve adipose tissue without negative energy balance.",
-
-                "source": "Journal of the Academy of Nutrition and Dietetics",
-
-                "sourceUrl": "https://jandonline.org",
-
-                "researchPaper": "Systematic Review of Vinegar Ingestion and Weight Loss Outcomes",
-
-                "researchSummary": "Minor reductions in postprandial glucose are documented, but visceral fat mass changes are statistically indistinguishable from placebo controls.",
-
-                "dataOrigin": "PubMed Central (PMC6188200)"
-
-            },
-
-            {
-
-                "verdict": "FALSE",
-
-                "timestamp": "02:50",
-
-                "seconds": 170,
-
-                "quote": "Alkaline ionized water neutralizes blood acidity and cures systemic inflammation.",
-
-                "explanation": "Gastric hydrochloric acid immediately neutralizes ingested alkaline water (pH 1.5-2.0 in stomach). Human systemic arterial pH is strictly regulated between 7.35 and 7.45 by bicarbonate buffering and respiratory ventilation.",
-
-                "source": "BMJ Open",
-
-                "sourceUrl": "https://bmjopen.bmj.com",
-
-                "researchPaper": "BMJ Open: Systematic Review of the Association Between Dietary Acid Load and Human Cancer",
-
-                "researchSummary": "There is no physiological mechanism for alkaline water to alter systemic blood pH without causing lethal metabolic alkalosis.",
-
-                "dataOrigin": "BMJ Publishing"
-
-            },
-
-            {
-
-                "verdict": "VERIFIED",
-
-                "timestamp": "03:30",
-
-                "seconds": 210,
-
-                "quote": "Chronic sleep deprivation below 6 hours nightly doubles cardiovascular and metabolic disease mortality risk.",
-
-                "explanation": "Longitudinal sleep cohort tracking demonstrates that short sleep duration upregulates sympathetic tone, elevates endothelial oxidative stress, and impairs glucose tolerance.",
-
-                "source": "European Heart Journal",
-
-                "sourceUrl": "https://academic.oup.com/eurheartj",
-
-                "researchPaper": "European Heart Journal: Sleep Duration and Cardiovascular Outcomes - A Meta-Analysis",
-
-                "researchSummary": "Relative risk for coronary events is elevated by 48% (95% CI 1.22-1.80) in individuals sleeping fewer than 6 hours per 24-hour cycle.",
-
-                "dataOrigin": "Oxford Academic"
-
-            },
-
-            {
-
-                "verdict": "MISLEADING",
-
-                "timestamp": "04:15",
-
-                "seconds": 255,
-
-                "quote": "Taking mega-doses of Vitamin C (10,000mg) prevents and cures the common cold.",
-
-                "explanation": "The Cochrane Systematic Review of 29 clinical trials found that high-dose vitamin C supplementation does not decrease the incidence of colds in the general population, offering only a negligible 8% reduction in duration.",
-
-                "source": "Cochrane Database of Systematic Reviews",
-
-                "sourceUrl": "https://www.cochranelibrary.com",
-
-                "researchPaper": "Cochrane Review: Vitamin C for Preventing and Treating the Common Cold",
-
-                "researchSummary": "Exceeding 2,000 mg/day exceeds renal tubular reabsorption thresholds, excreted in urine while increasing nephrolithiasis (kidney stone) risks.",
-
-                "dataOrigin": "Cochrane Library"
-
-            }
-
-        ]
-
-
-
-    # Category 4: Tech / AI / Computing
-
-    elif any(k in t_lower for k in ["ai", "tech", "quantum", "chip", "coding", "gpt", "software", "robot", "nvidia", "google", "crypto"]):
-
-        score = 70
-
-        intel = f"Rigorous computational audit for \"{title_clean}\". Identified 3 verified technical architectures, 3 computational complexity fallacies, and 2 misleading hardware claims."
-
-        cards = [
-
-            {
-
-                "verdict": "FALSE",
-
-                "timestamp": "00:12",
-
-                "seconds": 12,
-
-                "quote": "Quantum computers solve general NP-complete optimization problems in constant O(1) time.",
-
-                "explanation": "Quantum algorithms like Grover search provide at most a quadratic speedup O(sqrt(N)) for unstructured search. NP-complete problems remain intractable without exponential scaling.",
-
-                "source": "MIT CSAIL",
-
-                "sourceUrl": "https://www.csail.mit.edu",
-
-                "researchPaper": "Physical Review A: Grover Search Lower Bounds and Quantum Polynomial Hierarchies",
-
-                "researchSummary": "BQP is widely theorized not to contain the NP-complete complexity class.",
-
-                "dataOrigin": "IEEE Computer Society"
-
-            },
-
-            {
-
-                "verdict": "VERIFIED",
-
-                "timestamp": "00:39",
-
-                "seconds": 39,
-
-                "quote": "Standard scaled dot-product attention scales quadratically with input sequence length O(N^2).",
-
-                "explanation": "Pairwise matrix multiplication between Query (Q) and Key (K^T) tensors produces an N-by-N attention matrix requiring O(N^2) time and memory complexity.",
-
-                "source": "NeurIPS / arXiv",
-
-                "sourceUrl": "https://arxiv.org/abs/1706.03762",
-
-                "researchPaper": "NeurIPS: Attention Is All You Need (Vaswani et al.)",
-
-                "researchSummary": "Computational complexity per layer is O(N^2 * d) where N is sequence length and d is representation dimension.",
-
-                "dataOrigin": "arXiv Computer Science Repository"
-
-            },
-
-            {
-
-                "verdict": "FALSE",
-
-                "timestamp": "01:05",
-
-                "seconds": 65,
-
-                "quote": "Quantum entanglement transmits usable classical communication signals faster than light.",
-
-                "explanation": "The quantum No-Communication Theorem mathematically proves that local measurement on an entangled state cannot convey classical information superluminally.",
-
-                "source": "Physical Review Letters",
-
-                "sourceUrl": "https://journals.aps.org/prl",
-
-                "researchPaper": "Physical Review Letters: No-Communication Theorem in Non-Relativistic Quantum Mechanics",
-
-                "researchSummary": "Density matrices of local subsystems remain identical under remote unitary operations without a classical auxiliary channel.",
-
-                "dataOrigin": "American Physical Society"
-
-            },
-
-            {
-
-                "verdict": "VERIFIED",
-
-                "timestamp": "01:32",
-
-                "seconds": 92,
-
-                "quote": "FP16 half-precision tensor cores accelerate matrix multiplication throughput by 4x over FP32.",
-
-                "explanation": "Specialized systolic array hardware performs mixed-precision matrix multiply-accumulate operations (FP16 inputs, FP32 accumulate) yielding 4x FLOPs density compared to standard scalar FP32 execution.",
-
-                "source": "IEEE Micro",
-
-                "sourceUrl": "https://www.computer.org/csdl/magazine/mi",
-
-                "researchPaper": "IEEE Micro: Hardware Architectures for Deep Neural Network Acceleration",
-
-                "researchSummary": "Reduced operand bit-width cuts memory bandwidth pressure and silicon die area by half per compute unit.",
-
-                "dataOrigin": "IEEE Xplore"
-
-            },
-
-            {
-
-                "verdict": "MISLEADING",
-
-                "timestamp": "02:00",
-
-                "seconds": 120,
-
-                "quote": "Large language models build verified internal causal world models equivalent to human cognition.",
-
-                "explanation": "Formal evaluation proves current autoregressive architectures operate as statistical next-token approximations based on high-dimensional distributional semantics, lacking symbolic world-state grounding.",
-
-                "source": "Communications of the ACM",
-
-                "sourceUrl": "https://cacm.acm.org",
-
-                "researchPaper": "ACM: On the Limits of Autoregressive Language Modeling and Structural Generalization",
-
-                "researchSummary": "Models fail on out-of-distribution causal interventions where superficial statistical co-occurrence diverges from underlying physical mechanics.",
-
-                "dataOrigin": "ACM Digital Library"
-
-            },
-
-            {
-
-                "verdict": "FALSE",
-
-                "timestamp": "02:40",
-
-                "seconds": 160,
-
-                "quote": "Moore's Law continues at historical 18-month transistor density scaling indefinitely.",
-
-                "explanation": "Quantum tunneling through sub-nanometer gate oxides and extreme thermal density limits have ended classical Dennard scaling and slowed economic transistor cost reduction.",
-
-                "source": "Nature Electronics",
-
-                "sourceUrl": "https://www.nature.com/natelectron",
-
-                "researchPaper": "Nature Electronics: The Post-Silicon Roadmap and Physical Limits of Lithography",
-
-                "researchSummary": "Modern semiconductor nodes rely on 3D packaging, chiplets, and gate-all-around (GAA) nanosheets as gate pitches approach physical silicon atomic lattice limits (0.54 nm).",
-
-                "dataOrigin": "Nature Publishing Group"
-
-            },
-
-            {
-
-                "verdict": "VERIFIED",
-
-                "timestamp": "03:15",
-
-                "seconds": 195,
-
-                "quote": "FlashAttention reduces GPU memory bandwidth overhead by tiling matrix multiplication into SRAM.",
-
-                "explanation": "By computing softmax incrementally without materializing the full N-by-N attention matrix in High Bandwidth Memory (HBM), FlashAttention achieves up to 4x wall-clock speedup.",
-
-                "source": "NeurIPS",
-
-                "sourceUrl": "https://arxiv.org/abs/2205.14135",
-
-                "researchPaper": "NeurIPS: FlashAttention - Fast and Memory-Efficient Exact Attention with IO-Awareness (Dao et al.)",
-
-                "researchSummary": "IO-aware algorithm design optimizes data movement between fast on-chip SRAM (19 TB/s) and slower GPU HBM (2 TB/s).",
-
-                "dataOrigin": "arXiv Computer Science"
-
-            },
-
-            {
-
-                "verdict": "MISLEADING",
-
-                "timestamp": "03:55",
-
-                "seconds": 235,
-
-                "quote": "Blockchain smart contracts are immune to bugs and computational logic exploits.",
-
-                "explanation": "While blockchain transaction ledger execution is deterministic, application-level logic flaws (such as re-entrancy, oracle front-running, and integer overflow) have caused over $5 billion in audited protocol losses.",
-
-                "source": "IEEE Transactions on Software Engineering",
-
-                "sourceUrl": "https://ieeexplore.ieee.org",
-
-                "researchPaper": "IEEE TSE: Systematic Survey of Security Vulnerabilities in Ethereum Smart Contracts",
-
-                "researchSummary": "Static and dynamic analysis tools detect high prevalence of business logic vulnerabilities that cannot be mitigated by consensus finality alone.",
-
-                "dataOrigin": "IEEE Computer Society"
-
-            }
-
-        ]
-
-
-
-    # Category 5: Universal Default
-
-    else:
-
-        score = 66
-
-        intel = f"Rigorous multi-discipline empirical audit for \"{title_clean}\". Identified 3 verified physical facts, 3 widespread scientific misconceptions, and 2 statistical distortions."
-
-        cards = [
-
-            {
-
-                "verdict": "VERIFIED",
-
-                "timestamp": "00:14",
-
-                "seconds": 14,
-
-                "quote": "Earth's oceans absorb over 90% of global excess thermal energy trapped by greenhouse gases.",
-
-                "explanation": "Argo float telemetry and satellite altimetry confirm marine heat content accounts for 91% of positive planetary energy imbalance since 1971.",
-
-                "source": "Nature Climate Change",
-
-                "sourceUrl": "https://www.nature.com/nclimate",
-
-                "researchPaper": "Nature Climate Change: Ocean Heat Uptake and Energy Imbalance, 2023",
-
-                "researchSummary": "High specific heat capacity of saline water enables top 2000m of ocean to act as the primary terrestrial thermal buffer.",
-
-                "dataOrigin": "NOAA & Nature Publishing Group"
-
-            },
-
-            {
-
-                "verdict": "FALSE",
-
-                "timestamp": "00:40",
-
-                "seconds": 40,
-
-                "quote": "Humans only utilize 10% of their total cerebral cortical capacity during cognitive tasks.",
-
-                "explanation": "Functional MRI and PET metabolic mapping demonstrate that almost 100% of the brain shows continuous baseline neuronal firing even during sleep and simple sensory processing.",
-
-                "source": "Scientific American",
-
-                "sourceUrl": "https://www.scientificamerican.com",
-
-                "researchPaper": "Journal of Cognitive Neuroscience: Functional MRI Whole-Brain Activation Profiles",
-
-                "researchSummary": "There are no dormant neural reserves in the human cerebrum; energy metabolism scales with widespread cortical recruitment.",
-
-                "dataOrigin": "PubMed Central (PMC3124590)"
-
-            },
-
-            {
-
-                "verdict": "VERIFIED",
-
-                "timestamp": "01:08",
-
-                "seconds": 68,
-
-                "quote": "The speed of light in vacuum is an invariant universal physical constant c = 299,792,458 m/s.",
-
-                "explanation": "Confirmed by special relativity and verified across cryogenic resonant cavity experiments. The meter itself is defined by this exact invariant distance per second.",
-
-                "source": "National Institute of Standards (NIST)",
-
-                "sourceUrl": "https://www.nist.gov",
-
-                "researchPaper": "NIST Reference on Constants, Units, and Uncertainty",
-
-                "researchSummary": "Lorentz invariance remains verified to precision bounds of 10^-18 across planetary GPS and interferometric arrays.",
-
-                "dataOrigin": "NIST Standard Reference Data"
-
-            },
-
-            {
-
-                "verdict": "MISLEADING",
-
-                "timestamp": "01:35",
-
-                "seconds": 95,
-
-                "quote": "Renewable solar photovoltaic generation produces zero lifecycle carbon emissions.",
-
-                "explanation": "While zero operational emissions occur during electricity generation, silicon wafer purification, smelting, and module recycling produce an amortized 35-45 g CO2eq/kWh over 25-year lifespans.",
-
-                "source": "National Renewable Energy Lab (NREL)",
-
-                "sourceUrl": "https://www.nrel.gov",
-
-                "researchPaper": "NREL Lifecycle Greenhouse Gas Emissions from Solar Photovoltaics",
-
-                "researchSummary": "Solar lifecycle carbon footprint is 10x-20x lower than coal or natural gas, but not zero due to metallurgical refining inputs.",
-
-                "dataOrigin": "NREL Technical Library"
-
-            },
-
-            {
-
-                "verdict": "FALSE",
-
-                "timestamp": "02:05",
-
-                "seconds": 125,
-
-                "quote": "Antibiotics are clinically effective against rhinovirus, influenza, and common viral infections.",
-
-                "explanation": "Antibiotics target bacterial peptidoglycan cell walls, 70S ribosomal subunits, or folate synthesis pathways. Viruses lack these cellular targets; prescribing antibiotics for viral illness contributes to antimicrobial resistance without clinical benefit.",
-
-                "source": "World Health Organization (WHO) / CDC",
-
-                "sourceUrl": "https://www.who.int/news-room/fact-sheets/detail/antimicrobial-resistance",
-
-                "researchPaper": "The Lancet Infectious Diseases: Global Burden of Bacterial Antimicrobial Resistance",
-
-                "researchSummary": "Inappropriate antimicrobial prescribing for viral upper respiratory infections increases selective pressure driving multidrug-resistant pathogens.",
-
-                "dataOrigin": "WHO Global Antimicrobial Resistance Surveillance System"
-
-            },
-
-            {
-
-                "verdict": "VERIFIED",
-
-                "timestamp": "02:40",
-
-                "seconds": 160,
-
-                "quote": "Spaced repetition intervals double long-term memory retrieval efficiency in human cognition.",
-
-                "explanation": "Cognitive psychology experiments demonstrate that distributing study sessions across expanding temporal intervals induces memory reconsolidation and prevents synaptic trace decay.",
-
-                "source": "Psychological Science",
-
-                "sourceUrl": "https://www.psychologicalscience.org",
-
-                "researchPaper": "Psychological Science: The Spacing Effect in Memory Consolidation (Cepeda et al.)",
-
-                "researchSummary": "Optimal spacing gaps between study sessions consistently produce 200% higher retention rates on delayed recall tests.",
-
-                "dataOrigin": "APA PsycNet"
-
-            },
-
-            {
-
-                "verdict": "FALSE",
-
-                "timestamp": "03:15",
-
-                "seconds": 195,
-
-                "quote": "Microwave ovens alter molecular food chemistry to create radioactive carcinogenic compounds.",
-
-                "explanation": "Microwave radiation is non-ionizing electromagnetic radiation (2.45 GHz). It induces dipole rotation in dielectric water molecules to produce thermal kinetic heat, lacking the photon energy required to ionize atoms or cause genetic carcinogenesis.",
-
-                "source": "American Cancer Society / FDA",
-
-                "sourceUrl": "https://www.cancer.org",
-
-                "researchPaper": "Food and Chemical Toxicology: Microwave Cooking and Nutrient Degradation vs. Conventional Thermal Methods",
-
-                "researchSummary": "Microwaved foods show nutrient retention equal to or greater than steaming and boiling, with zero detected radiolytic carcinogens.",
-
-                "dataOrigin": "FDA Radiation-Emitting Products Archive"
-
-            },
-
-            {
-
-                "verdict": "MISLEADING",
-
-                "timestamp": "03:50",
-
-                "seconds": 230,
-
-                "quote": "Sugar intake is the direct, solitary cause of Type 2 Diabetes Mellitus.",
-
-                "explanation": "Type 2 diabetes pathogenesis is an etiology of systemic insulin resistance driven by genetic susceptibility, chronic positive caloric surplus, ectopic visceral fat accumulation, and sedentary lifestyle, not simply dietary sucrose intake alone.",
-
-                "source": "American Diabetes Association (ADA)",
-
-                "sourceUrl": "https://diabetes.org",
-
-                "researchPaper": "Diabetes Care: Standards of Medical Care in Diabetes - Nutritional Therapy",
-
-                "researchSummary": "Isocaloric exchange of fructose or sucrose for other carbohydrates does not induce hepatic steatosis or impair glycemic control in non-caloric-surplus trials.",
-
-                "dataOrigin": "ADA Clinical Standards"
-
-            }
-
-        ]
-
-
-
-    return {"score": score, "intel": intel, "cards": cards, "model": "Gemini 3.8 High Reasoning"}
-
-
-
-
-
-
-
-
-
-
 
 @app.get("/", response_class=HTMLResponse)
 def root_dashboard():
@@ -1504,7 +308,192 @@ def root_dashboard():
         .header-meta {
             display: flex;
             align-items: center;
-            gap: 14px;
+            gap: 10px;
+        }
+
+        .model-select-wrap {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .model-dropdown {
+            background: rgba(17, 22, 36, 0.95);
+            border: 1px solid rgba(59, 130, 246, 0.45);
+            color: #93C5FD;
+            font-family: var(--mono);
+            font-size: 11.5px;
+            font-weight: 500;
+            padding: 6px 10px;
+            border-radius: 8px;
+            outline: none;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .model-dropdown:hover {
+            border-color: #60A5FA;
+            background: rgba(22, 29, 48, 0.98);
+        }
+        .model-dropdown option {
+            background: #0C1019;
+            color: #F8FAFC;
+            font-family: var(--sans);
+            padding: 6px;
+        }
+
+        /* Settings Modal */
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0, 0, 0, 0.78);
+            backdrop-filter: blur(8px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 99999;
+        }
+        .modal-card {
+            background: #0D121F;
+            border: 1px solid rgba(59, 130, 246, 0.35);
+            border-radius: 14px;
+            width: 92%;
+            max-width: 540px;
+            padding: 24px 28px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.8), 0 0 30px rgba(59,130,246,0.15);
+            animation: modalFadeIn 0.2s ease-out;
+        }
+        @keyframes modalFadeIn {
+            from { opacity: 0; transform: translateY(-12px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .modal-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid var(--border);
+        }
+        .modal-title {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 17px;
+            font-weight: 700;
+            color: #F8FAFC;
+        }
+        .modal-close-btn {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            font-size: 18px;
+            cursor: pointer;
+            padding: 4px 8px;
+            border-radius: 6px;
+        }
+        .modal-close-btn:hover {
+            color: #FFF;
+            background: rgba(255,255,255,0.08);
+        }
+        .modal-desc {
+            font-size: 12.5px;
+            color: var(--text-muted);
+            line-height: 1.45;
+            margin-bottom: 18px;
+        }
+        .config-group {
+            margin-bottom: 14px;
+        }
+        .config-group label {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 12px;
+            font-weight: 600;
+            color: #E2E8F0;
+            margin-bottom: 5px;
+        }
+        .key-link {
+            font-size: 11px;
+            color: #60A5FA;
+            text-decoration: none;
+        }
+        .key-link:hover { text-decoration: underline; }
+        .input-with-toggle {
+            display: flex;
+            align-items: center;
+            position: relative;
+        }
+        .input-with-toggle input, .config-group input[type="text"], .config-select {
+            width: 100%;
+            background: #131929;
+            border: 1px solid var(--border);
+            color: #F8FAFC;
+            font-family: var(--mono);
+            font-size: 12px;
+            padding: 8px 12px;
+            border-radius: 8px;
+            outline: none;
+            transition: all 0.2s ease;
+        }
+        .input-with-toggle input:focus, .config-group input[type="text"]:focus, .config-select:focus {
+            border-color: #3B82F6;
+            box-shadow: 0 0 10px rgba(59,130,246,0.25);
+        }
+        .input-with-toggle input { padding-right: 38px; }
+        .toggle-pw-btn {
+            position: absolute;
+            right: 8px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 13px;
+            opacity: 0.65;
+        }
+        .toggle-pw-btn:hover { opacity: 1; }
+        .field-hint {
+            font-size: 11px;
+            color: var(--text-dim);
+            margin-top: 4px;
+        }
+        .config-row {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 14px;
+        }
+        .modal-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 20px;
+            padding-top: 14px;
+            border-top: 1px solid var(--border);
+        }
+        .modal-btn {
+            font-size: 12.5px;
+            font-weight: 600;
+            padding: 8px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .modal-btn.secondary {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid var(--border);
+            color: var(--text-muted);
+        }
+        .modal-btn.secondary:hover {
+            background: rgba(255,255,255,0.08);
+            color: #FFF;
+        }
+        .modal-btn.primary {
+            background: linear-gradient(135deg, #2563EB, #1D4ED8);
+            border: 1px solid #3B82F6;
+            color: #FFFFFF;
+            box-shadow: 0 4px 12px rgba(37,99,235,0.3);
+        }
+        .modal-btn.primary:hover {
+            background: linear-gradient(135deg, #3B82F6, #2563EB);
         }
 
         .status-pill {
@@ -2573,22 +1562,35 @@ def root_dashboard():
             </div>
             <div class="brand-title">
                 LiveTruth Shield
-                <span class="brand-badge">GEMINI 3.8 HIGH</span>
+                <span class="brand-badge">LIVE AI</span>
             </div>
         </a>
 
         <div class="header-meta">
-            <div class="status-pill">
-                <span class="status-pulse"></span>
-                <span>GEMINI 3.8 HIGH REASONING</span>
+            <div class="model-select-wrap">
+                <select id="modelSelector" class="model-dropdown" onchange="onModelChange()" title="Choose Active AI Reasoning Model">
+                    <option value="auto">🔄 Auto (Hybrid DeepSeek + Gemini)</option>
+                    <option value="deepseek-chat">🚀 DeepSeek-V3 (Precision & Speed)</option>
+                    <option value="deepseek-reasoner">🔬 DeepSeek-R1 (Deep Reasoner)</option>
+                    <option value="gemini-2.5-flash">⚡ Gemini 2.5 Flash (Search Grounded)</option>
+                    <option value="gemini-2.0-flash">🔮 Gemini 2.0 Flash</option>
+                </select>
             </div>
+            <div class="status-pill" id="headerStatusPill">
+                <span class="status-pulse"></span>
+                <span id="headerStatusText">HYBRID AI ENGINE</span>
+            </div>
+            <button class="header-btn" id="btnConfig" onclick="openConfigModal()" title="Configure DeepSeek & Gemini API Keys">
+                <span>⚙️</span>
+                <span>AI Config</span>
+            </button>
             <button class="header-btn" id="soundToggle" onclick="toggleSound()">
                 <span id="soundIcon">🔊</span>
-                <span id="soundLabel">Audio Alerts</span>
+                <span id="soundLabel">Audio</span>
             </button>
             <button class="autopause-btn active" id="btnAutoPause" onclick="toggleSafetyMode()">
                 <span id="apIcon">🛑</span>
-                <span id="apText">Safety Mode: ON</span>
+                <span id="apText">Safety Mode</span>
             </button>
         </div>
     </header>
@@ -2648,7 +1650,7 @@ def root_dashboard():
                         <p id="auditedCount">Audited 0 claims across dialogue</p>
                         <div id="modelBadgeRow" style="display:inline-flex; align-items:center; gap:6px; margin-top:5px; font-family:var(--mono); font-size:11px; color:#60A5FA; background:rgba(59,130,246,0.12); border:1px solid rgba(59,130,246,0.3); border-radius:6px; padding:2px 8px;">
                             <span>🧠</span>
-                            <span id="modelBadgeText">Gemini 3.8 High (Extended Thinking)</span>
+                            <span id="modelBadgeText">Live AI search</span>
                         </div>
                     </div>
                 </div>
@@ -2689,8 +1691,8 @@ def root_dashboard():
                 <div class="assistant-header">
                     <div class="assistant-title">
                         <span>💬</span>
-                        <span>Ask Gemini Fact Assistant</span>
-                        <span class="assistant-badge">Gemini 3.8 High Reasoning</span>
+                        <span>Ask the Fact Assistant</span>
+                        <span class="assistant-badge">Live AI</span>
                     </div>
                 </div>
                 <div class="assistant-chips">
@@ -2700,11 +1702,11 @@ def root_dashboard():
                     <button class="assistant-chip" onclick="quickAsk('Identify any logical fallacies used in this statement.')">🚩 Explain Fallacies</button>
                 </div>
                 <div class="assistant-chat" id="assistantChat">
-                    <div class="chat-bubble bot">👋 Hi! I am your real-time Gemini 3.8 fact assistant. Ask any question about this video's dialogue, scientific consensus, or primary literature refutations.</div>
+                    <div class="chat-bubble bot">👋 Hi! I am your real-time fact assistant. Ask any question about this video's dialogue, scientific consensus, or primary literature refutations.</div>
                 </div>
                 <div class="assistant-input-row">
-                    <input type="text" id="assistantInput" class="assistant-input" placeholder="Ask Gemini about claims, evidence, or study conclusions..." onkeydown="if(event.key==='Enter'){event.preventDefault(); sendAssistantQuestion();}">
-                    <button class="assistant-send-btn" onclick="sendAssistantQuestion()">Ask Gemini</button>
+                    <input type="text" id="assistantInput" class="assistant-input" placeholder="Ask about claims, evidence, or study conclusions..." onkeydown="if(event.key==='Enter'){event.preventDefault(); sendAssistantQuestion();}">
+                    <button class="assistant-send-btn" onclick="sendAssistantQuestion()">Ask</button>
                 </div>
             </div>
         </div>
@@ -2787,7 +1789,7 @@ def root_dashboard():
                 </div>
             `;
             document.getElementById("scoreVal").innerText = "...";
-            document.getElementById("veracityStatus").innerText = "Auditing Claims with Gemini 3.8 High Reasoning...";
+            document.getElementById("veracityStatus").innerText = "Auditing Claims with Live AI...";
             document.getElementById("auditedCount").innerText = "Cross-referencing scientific authority papers...";
         }
 
@@ -2801,7 +1803,8 @@ def root_dashboard():
             renderSkeleton();
 
             try {
-                const res = await fetch("/api/check?v=" + encodeURIComponent(url));
+                const selModel = document.getElementById("modelSelector") ? document.getElementById("modelSelector").value : "auto";
+                const res = await fetch("/api/check?v=" + encodeURIComponent(url) + "&provider=" + encodeURIComponent(selModel));
                 const data = await res.json();
                 currentAuditData = data;
                 renderResults(data);
@@ -2838,9 +1841,10 @@ def root_dashboard():
 
         function renderResults(data) {
             document.getElementById("resultsPanel").style.display = "block";
+            const failed = !!data.error;
             const score = data.score || 0;
             const scoreVal = document.getElementById("scoreVal");
-            scoreVal.innerText = score + "%";
+            scoreVal.innerText = failed ? "—" : score + "%";
 
             // SVG Radial Meter animation (radius 30 => circumference ~188)
             const circle = document.getElementById("scoreCircleProgress");
@@ -2864,6 +1868,7 @@ def root_dashboard():
 
             circle.style.stroke = strokeColor;
             scoreVal.style.color = strokeColor;
+            if (failed) { statusTitle = "Audit could not be completed"; strokeColor = "#94A3B8"; circle.style.stroke = strokeColor; scoreVal.style.color = strokeColor; }
             document.getElementById("veracityStatus").innerText = statusTitle;
 
             const cards = data.cards || [];
@@ -2967,22 +1972,23 @@ def root_dashboard():
             input.value = "";
             const chat = document.getElementById("assistantChat");
             chat.innerHTML += `<div class="chat-bubble user">${escapeHtml(q)}</div>`;
-            chat.innerHTML += `<div class="chat-bubble bot" id="loadingBubble">Thinking with Gemini 3.8 High Reasoning...</div>`;
+            chat.innerHTML += `<div class="chat-bubble bot" id="loadingBubble">Thinking with Live AI...</div>`;
             chat.scrollTop = chat.scrollHeight;
 
             try {
                 const vid = currentAuditData && currentAuditData.video_id ? currentAuditData.video_id : (document.getElementById("videoUrl").value.trim() || "demo");
+                const selModel = document.getElementById("modelSelector") ? document.getElementById("modelSelector").value : "auto";
                 const res = await fetch("/api/ask", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ question: q, video_id: vid, title: document.title })
+                    body: JSON.stringify({ question: q, video_id: vid, title: document.title, provider: selModel, model: selModel })
                 });
                 const data = await res.json();
                 const lb = document.getElementById("loadingBubble");
                 if (lb) lb.remove();
 
                 const answer = data.answer || "No response received.";
-                chat.innerHTML += `<div class="chat-bubble bot">${escapeHtml(answer)} <div style="font-size:10px; color:#60A5FA; margin-top:4px; font-family:var(--mono);">⚡ ${data.model || 'Gemini 3.8 High'}</div></div>`;
+                chat.innerHTML += `<div class="chat-bubble bot">${escapeHtml(answer)} <div style="font-size:10px; color:#60A5FA; margin-top:4px; font-family:var(--mono);">⚡ ${data.model || 'AI'}</div></div>`;
             } catch (err) {
                 const lb = document.getElementById("loadingBubble");
                 if (lb) lb.remove();
@@ -3015,7 +2021,7 @@ def root_dashboard():
             cards.slice(0, 4).forEach(c => {
                 text += `[${c.verdict}] "${c.quote}" -> Refutation: ${c.explanation} (Source: ${c.source})\n\n`;
             });
-            const engineName = (currentAuditData && currentAuditData.model) || "Gemini 3.8 High Reasoning";
+            const engineName = (currentAuditData && currentAuditData.model) || "Live AI";
             text += `Audited autonomously by LiveTruth Shield (${engineName} + Search Grounding)`;
 
             navigator.clipboard.writeText(text).then(() => {
@@ -3025,7 +2031,7 @@ def root_dashboard():
 
         function exportDossierMarkdown() {
             if (!currentAuditData) return;
-            const engineName = (currentAuditData && currentAuditData.model) || "Gemini 3.8 High Reasoning";
+            const engineName = (currentAuditData && currentAuditData.model) || "Live AI";
             let md = `# LiveTruth Shield // Fact-Checking Dossier\n\n`;
             md += `**AI Engine:** ${engineName}\n`;
             md += `**Truth Reliability Score:** ${currentAuditData.score || 0}%\n`;
@@ -3054,7 +2060,170 @@ def root_dashboard():
 
 
 
+    
+        // Multi-Model Configuration Functions
+        function openConfigModal() {
+            document.getElementById('configModal').style.display = 'flex';
+            loadAiConfig();
+        }
+
+        function closeConfigModal() {
+            document.getElementById('configModal').style.display = 'none';
+        }
+
+        function togglePasswordVisibility(inputId) {
+            const el = document.getElementById(inputId);
+            if (el.type === 'password') { el.type = 'text'; } else { el.type = 'password'; }
+        }
+
+        async function loadAiConfig() {
+            try {
+                const res = await fetch('/api/config');
+                const data = await res.json();
+                if (data) {
+                    if (data.provider) document.getElementById('cfgProvider').value = data.provider;
+                    if (data.deepseek_model) document.getElementById('cfgDeepseekModel').value = data.deepseek_model;
+                    if (data.deepseek_base_url) document.getElementById('cfgDeepseekUrl').value = data.deepseek_base_url;
+                    
+                    const statusText = document.getElementById('headerStatusText');
+                    if (statusText) {
+                        if (data.deepseek_configured && data.gemini_configured) {
+                            statusText.innerText = "HYBRID: DEEPSEEK + GEMINI";
+                        } else if (data.deepseek_configured) {
+                            statusText.innerText = "DEEPSEEK ACTIVE";
+                        } else if (data.gemini_configured) {
+                            statusText.innerText = "GEMINI ACTIVE";
+                        } else {
+                            statusText.innerText = "NO API KEY";
+                        }
+                    }
+                }
+            } catch (e) {
+                console.warn("Could not load AI config:", e);
+            }
+        }
+
+        async function saveConfig() {
+            const btn = document.getElementById('btnSaveConfig');
+            const fb = document.getElementById('cfgFeedback');
+            btn.innerText = "Saving & Testing...";
+            btn.style.opacity = "0.7";
+
+            const payload = {
+                deepseek_key: document.getElementById('cfgDeepseekKey').value.trim(),
+                gemini_key: document.getElementById('cfgGeminiKey').value.trim(),
+                provider: document.getElementById('cfgProvider').value,
+                deepseek_model: document.getElementById('cfgDeepseekModel').value,
+                deepseek_base_url: document.getElementById('cfgDeepseekUrl').value.trim()
+            };
+
+            try {
+                const res = await fetch('/api/config', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const data = await res.json();
+                if (data.success) {
+                    fb.style.display = 'block';
+                    fb.style.color = '#34D399';
+                    fb.innerText = "✅ " + (data.message || "Configuration saved and activated!");
+                    showToast("⚡ AI Engine configured successfully!");
+                    setTimeout(() => { closeConfigModal(); fb.style.display = 'none'; }, 1200);
+                    loadAiConfig();
+                } else {
+                    fb.style.display = 'block';
+                    fb.style.color = '#EF4444';
+                    fb.innerText = "❌ Error: " + (data.error || "Could not save configuration");
+                }
+            } catch (err) {
+                fb.style.display = 'block';
+                fb.style.color = '#EF4444';
+                fb.innerText = "❌ Network Error: " + err;
+            } finally {
+                btn.innerText = "Save & Activate AI";
+                btn.style.opacity = "1";
+            }
+        }
+
+        function onModelChange() {
+            const chosen = document.getElementById('modelSelector').value;
+            showToast("Switched AI model to " + chosen);
+        }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            loadAiConfig();
+        });
+
     </script>
+
+    <!-- AI Engine Configuration Modal -->
+    <div class="modal-overlay" id="configModal" onclick="if(event.target===this) closeConfigModal()">
+        <div class="modal-card">
+            <div class="modal-header">
+                <div class="modal-title">
+                    <span>⚡</span>
+                    <span>AI Engine & Models Configuration</span>
+                </div>
+                <button class="modal-close-btn" onclick="closeConfigModal()">✕</button>
+            </div>
+            <p class="modal-desc">Configure your DeepSeek and Google Gemini API keys. Keys are saved securely to your local <code>backend/.env</code> file.</p>
+
+            <div class="config-group">
+                <label>
+                    <span>🚀 DeepSeek API Key</span>
+                    <a href="https://platform.deepseek.com/" target="_blank" class="key-link">Get DeepSeek Key ↗</a>
+                </label>
+                <div class="input-with-toggle">
+                    <input type="password" id="cfgDeepseekKey" placeholder="sk-..." autocomplete="off">
+                    <button type="button" class="toggle-pw-btn" onclick="togglePasswordVisibility('cfgDeepseekKey')">👁️</button>
+                </div>
+                <div class="field-hint">Supports DeepSeek-V3 & DeepSeek-R1 (Deep Reasoner). Highly accurate empirical fact-checking.</div>
+            </div>
+
+            <div class="config-group">
+                <label>
+                    <span>⚡ Google Gemini API Key</span>
+                    <a href="https://aistudio.google.com/apikey" target="_blank" class="key-link">Get Free Gemini Key ↗</a>
+                </label>
+                <div class="input-with-toggle">
+                    <input type="password" id="cfgGeminiKey" placeholder="AIzaSy..." autocomplete="off">
+                    <button type="button" class="toggle-pw-btn" onclick="togglePasswordVisibility('cfgGeminiKey')">👁️</button>
+                </div>
+                <div class="field-hint">Free from Google AI Studio. Powers Gemini 2.5 Flash with live Google Search grounding.</div>
+            </div>
+
+            <div class="config-row">
+                <div class="config-group" style="flex:1;">
+                    <label>Default Engine Routing</label>
+                    <select id="cfgProvider" class="config-select">
+                        <option value="auto">Auto Hybrid (DeepSeek + Gemini)</option>
+                        <option value="deepseek">DeepSeek Primary</option>
+                        <option value="gemini">Google Gemini Primary</option>
+                    </select>
+                </div>
+                <div class="config-group" style="flex:1;">
+                    <label>DeepSeek Reasoning Mode</label>
+                    <select id="cfgDeepseekModel" class="config-select">
+                        <option value="deepseek-chat">DeepSeek-V3 (Fast & Precise)</option>
+                        <option value="deepseek-reasoner">DeepSeek-R1 (Deep Reasoner)</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="config-group">
+                <label>DeepSeek Base URL (OpenAI-compatible)</label>
+                <input type="text" id="cfgDeepseekUrl" value="https://api.deepseek.com" placeholder="https://api.deepseek.com">
+            </div>
+
+            <div class="modal-actions">
+                <button class="modal-btn secondary" onclick="closeConfigModal()">Cancel</button>
+                <button class="modal-btn primary" id="btnSaveConfig" onclick="saveConfig()">Save & Activate AI</button>
+            </div>
+            <div id="cfgFeedback" style="display:none; margin-top:12px; font-size:12px; text-align:center;"></div>
+        </div>
+    </div>
+
 </body>
 </html>
 """
@@ -3080,7 +2249,10 @@ def get_presentation_file():
         os.path.join(os.path.dirname(os.path.dirname(__file__)), "LiveTruth_Shield_Presentation.pptx"),
         os.path.join(os.path.dirname(__file__), "LiveTruth_Shield_Presentation.pptx"),
         "LiveTruth_Shield_Presentation.pptx",
-        r"C:\Users\Acer\Desktop\LiveTruth_Shield_Presentation.pptx"
+        r"C:\Users\Acer\Desktop\LiveTruth_Shield_Presentation.pptx",
+        os.path.join(os.path.dirname(os.path.dirname(__file__)), "presentation.html"),
+        os.path.join(os.path.dirname(__file__), "presentation.html"),
+        "presentation.html"
     ]
     for p in candidates:
         if os.path.exists(p):
@@ -3105,200 +2277,167 @@ def favicon():
 
 
 @app.get("/api/health")
-
-
-
 def health():
-
-
-
+    status = ai_engine.get_ai_status()
     return {
         "status": "online",
-        "model": "Gemini 3.8 High Reasoning (Extended Thinking) + Search Grounding",
-        "gemini_configured": client is not None,
-        "thinking_level": "HIGH"
+        "model": status.get("active_display", "Multi-Model AI Engine"),
+        "gemini_configured": status.get("gemini_configured", False),
+        "deepseek_configured": status.get("deepseek_configured", False),
+        "thinking_level": "HIGH",
+        "provider": status.get("provider", "auto"),
+        "deepseek_model": status.get("deepseek_model", "deepseek-chat"),
+        "gemini_models": status.get("gemini_models", [])
     }
 
 
+@app.get("/api/config")
+def get_config():
+    return ai_engine.get_ai_status()
 
 
-
-
-
-
-
-
-
+@app.post("/api/config")
 @app.post("/api/key")
+async def save_config_endpoint(data: dict):
+    gemini_key = data.get("gemini_key") or data.get("key")
+    deepseek_key = data.get("deepseek_key")
+    provider = data.get("provider")
+    deepseek_model = data.get("deepseek_model")
+    deepseek_base_url = data.get("deepseek_base_url")
 
-
-
-async def save_api_key(data: dict):
-
-
-
-    global client, GEMINI_API_KEY
-
-
-
-    key = data.get("key", "").strip()
-
-
-
-    if key:
-
-
-
-        GEMINI_API_KEY = key
-
-
-
-        try:
-
-
-
-            if Features_Available:
-
-
-
-                from google import genai
-
-
-
-                client = genai.Client(api_key=key)
-
-
-
-            env_file = os.path.join(os.path.dirname(__file__), ".env")
-
-
-
-            with open(env_file, "w", encoding="utf-8") as f:
-
-
-
-                f.write(f"GEMINI_API_KEY={key}\n")
-
-
-
-            print(f"[+] Successfully saved and activated new Gemini API key!")
-
-
-
-            return {"success": True, "message": "Gemini API key configured and active!"}
-
-
-
-        except Exception as e:
-
-
-
-            return {"success": False, "error": str(e)}
-
-
-
-    return {"success": False, "error": "No key provided"}
-
-
-
-
-
-
-
-def fetch_youtube_transcript_text(video_id: str, title: str) -> tuple[str, int]:
-    text_chunk = ""
-    total_duration_sec = 0
     try:
-        yt = YouTubeTranscriptApi()
-        transcript = None
-        try:
-            transcript = yt.fetch(video_id)
-        except Exception:
-            try:
-                transcript = YouTubeTranscriptApi.get_transcript(video_id)
-            except Exception:
-                try:
-                    transcript_list = yt.list(video_id)
-                    try:
-                        transcript = transcript_list.find_transcript(["en", "en-US", "en-GB"]).fetch()
-                    except Exception:
-                        try:
-                            transcript = transcript_list.find_transcript(["hi"]).fetch()
-                        except Exception:
-                            transcript = next(iter(transcript_list)).fetch()
-                except Exception as e_inner:
-                    print(f"[!] Could not list transcripts: {e_inner}")
-
-        if transcript and len(transcript) > 0:
-            total_snippets = len(transcript)
-            last_item = transcript[-1]
-            last_start = getattr(last_item, "start", 0) if hasattr(last_item, "start") else (last_item.get("start", 0) if isinstance(last_item, dict) else 0)
-            total_duration_sec = int(last_start)
-
-            if total_snippets <= 350:
-                sampled_items = transcript
-            else:
-                step = total_snippets / 350.0
-                sampled_items = [transcript[int(i * step)] for i in range(350)]
-
-            for item in sampled_items:
-                start = getattr(item, "start", None)
-                if start is None:
-                    start = item.get("start", 0) if isinstance(item, dict) else 0
-                text = getattr(item, "text", None)
-                if text is None:
-                    text = item.get("text", "") if isinstance(item, dict) else ""
-                m = int(start // 60)
-                s = int(start % 60)
-                text_chunk += f"[{m:02d}:{s:02d}] {text.strip()}\n"
-
-            print(f"[+] Extracted entire video transcript: {total_snippets} total snippets (~{total_duration_sec // 60}m {total_duration_sec % 60}s). Sampled {len(sampled_items)} key checkpoints across the timeline.")
-        else:
-            print(f"[Info] Direct transcript unavailable for {video_id}. Activating Deep Topic Analysis for: '{title}'...")
-            text_chunk = f"Video Title / Topic: {title}\nURL: https://www.youtube.com/watch?v={video_id}\nNote: Analyzing public verified claims from this specific video dialogue."
+        new_status = ai_engine.save_ai_config(
+            deepseek_key=deepseek_key,
+            gemini_key=gemini_key,
+            provider=provider,
+            deepseek_model=deepseek_model,
+            deepseek_base_url=deepseek_base_url
+        )
+        return {
+            "success": True,
+            "message": "AI configuration updated and active!",
+            "status": new_status
+        }
     except Exception as e:
-        print(f"[Info] Transcript error or unavailable ({e}). Activating Deep Topic Analysis for: '{title}'...")
-        text_chunk = f"Video Title / Topic: {title}\nURL: https://www.youtube.com/watch?v={video_id}\nNote: Analyze key spoken claims made in this specific talk or interview."
-
-    return text_chunk, total_duration_sec
+        return {"success": False, "error": str(e)}
 
 
-# Channel Veracity Historical Registry
-CHANNEL_SCORES_CACHE = {
-    "default": {
-        "channel": "Independent Creator",
-        "veracity_score": 86,
-        "total_claims": 24,
-        "videos_audited": 3,
-        "rating": "High Empirical Veracity",
-        "badge_class": "high-veracity"
+def fetch_youtube_transcript(video_id: str):
+    """Fetch the real caption track. Returns (segments, error). segments = [(seconds, text), ...]."""
+    yt = YouTubeTranscriptApi()
+    fetched = None
+    try:
+        fetched = yt.fetch(video_id, languages=["en", "en-US", "en-GB", "en-IN", "hi"])
+    except Exception as e1:
+        print(f"[!] Preferred-language transcript failed ({e1}). Trying any available track...")
+        try:
+            fetched = next(iter(yt.list(video_id))).fetch()
+        except Exception as e2:
+            print(f"[!] No transcript for {video_id}: {e2}")
+            return [], str(e2).strip().splitlines()[0] if str(e2).strip() else "no captions"
+    try:
+        raw = fetched.to_raw_data() if hasattr(fetched, "to_raw_data") else list(fetched)
+    except Exception:
+        raw = list(fetched)
+    segments = []
+    for item in raw:
+        if isinstance(item, dict):
+            start, text = item.get("start", 0), item.get("text", "")
+        else:
+            start, text = getattr(item, "start", 0), getattr(item, "text", "")
+        text = re.sub(r"\s+", " ", str(text)).strip()
+        if text:
+            segments.append((int(start), text))
+    print(f"[+] Real transcript fetched for {video_id}: {len(segments)} caption segments.")
+    return segments, ""
+
+
+def build_transcript_text(segments, max_chars: int = 48000) -> str:
+    """Merge caption fragments into ~12s timestamped lines (whole video, no random sampling)."""
+    lines, bucket_start, buf = [], None, []
+    for sec, text in segments:
+        if bucket_start is None:
+            bucket_start = sec
+        buf.append(text)
+        if sec - bucket_start >= 12:
+            lines.append(f"[{bucket_start // 60:02d}:{bucket_start % 60:02d}] {' '.join(buf)}")
+            bucket_start, buf = None, []
+    if buf:
+        lines.append(f"[{bucket_start // 60:02d}:{bucket_start % 60:02d}] {' '.join(buf)}")
+    text = "\n".join(lines)
+    if len(text) > max_chars:  # very long video: keep evenly spread lines
+        stride = -(-len(text) // max_chars)
+        text = "\n".join(lines[::stride])
+    return text
+
+
+# ---------------------------------------------------------------------------
+# Creator Veracity Index: computed from audits this server actually ran
+# ---------------------------------------------------------------------------
+CHANNEL_DB_PATH = os.path.join(backend_dir, "channel_history.json")
+try:
+    with open(CHANNEL_DB_PATH, "r", encoding="utf-8") as _f:
+        CHANNEL_DB = json.load(_f)
+except Exception:
+    CHANNEL_DB = {}
+
+
+def record_channel_audit(channel: str, video_id: str, title: str, result: dict):
+    channel = (channel or "").strip()
+    cards = result.get("cards") or []
+    if not channel or channel.lower() == "youtube" or not cards:
+        return
+    count = lambda v: sum(1 for c in cards if c.get("verdict") == v)
+    entry = CHANNEL_DB.setdefault(channel, {"channel": channel, "videos": {}})
+    entry["videos"][video_id] = {
+        "title": title, "score": result.get("score", 0), "claims": len(cards),
+        "false": count("FALSE"), "misleading": count("MISLEADING"),
+        "verified": count("VERIFIED"), "exaggeration": count("EXAGGERATION"),
+        "audited_at": int(time.time()),
     }
-}
+    try:
+        with open(CHANNEL_DB_PATH, "w", encoding="utf-8") as f:
+            json.dump(CHANNEL_DB, f, indent=2, ensure_ascii=False)
+    except Exception as e:
+        print(f"[!] Could not save channel history: {e}")
+
 
 @app.get("/api/channel-score")
-def get_channel_score(channel: str = Query("Unknown Creator", description="Channel Name")):
-    clean_name = (channel or "").strip()
-    if not clean_name or clean_name.lower() in ["youtube", "unknown creator", "undefined", "null"]:
-        clean_name = "Independent Creator"
+def get_channel_score(channel: str = Query("", description="Channel Name")):
+    name = (channel or "").strip()
+    videos = (CHANNEL_DB.get(name) or {}).get("videos") or {}
+    if not videos:
+        return {"channel": name, "veracity_score": None, "total_claims": 0, "videos_audited": 0,
+                "rating": "Not enough data yet (audit more of this creator's videos)"}
+    total_claims = sum(v["claims"] for v in videos.values())
+    score = int(round(sum(v["score"] * v["claims"] for v in videos.values()) / max(1, total_claims)))
+    if score >= 80:
+        rating = "High Empirical Veracity"
+    elif score >= 60:
+        rating = "Generally Sound"
+    elif score >= 40:
+        rating = "Mixed Reliability"
+    else:
+        rating = "Low Reliability"
+    return {"channel": name, "veracity_score": score, "total_claims": total_claims,
+            "videos_audited": len(videos), "rating": rating}
 
-    if clean_name not in CHANNEL_SCORES_CACHE:
-        # Deterministic credibility calculation
-        h = int(hashlib.md5(clean_name.encode('utf-8')).hexdigest()[:6], 16)
-        score = 74 + (h % 22)  # 74% to 95%
-        claims_count = 14 + (h % 35)
-        vids = 2 + (h % 7)
-        rating = "High Empirical Veracity" if score >= 80 else ("Sound Veracity Index" if score >= 65 else "Moderate Risk")
-        badge_class = "high" if score >= 80 else "moderate"
-        CHANNEL_SCORES_CACHE[clean_name] = {
-            "channel": clean_name,
-            "veracity_score": score,
-            "total_claims": claims_count,
-            "videos_audited": vids,
-            "rating": rating,
-            "badge_class": badge_class
-        }
 
-    return CHANNEL_SCORES_CACHE[clean_name]
+def normalize_provider(provider, model):
+    """The web dashboard sends a model name in the provider field; split it correctly."""
+    p = (provider or "").strip().lower()
+    m = (model or "").strip() or None
+    if p.startswith("deepseek-"):
+        m, p = (m or p), "deepseek"
+    elif p.startswith("gemini-"):
+        m, p = (m or p), "gemini"
+    elif p not in ("auto", "deepseek", "gemini"):
+        p = ""
+    return (p or None), m
+
+
+def error_payload(msg: str) -> dict:
+    return {"score": 0, "intel": msg, "cards": [], "error": msg, "model": "none"}
 
 
 @app.post("/api/ask")
@@ -3307,510 +2446,104 @@ async def ask_assistant(
     q: str = Query("", description="Question asked by viewer"),
     v: str = Query("", description="Video ID or URL"),
     t: str = Query("", description="Timestamp e.g. 02:15"),
+    provider: str = Query(None, description="Model provider: auto, deepseek, or gemini"),
+    model: str = Query(None, description="Model name e.g. deepseek-chat, deepseek-reasoner"),
     data: dict = None
 ):
-    question = (data.get("question") if isinstance(data, dict) else None) or q or ""
-    video_id = (data.get("video_id") if isinstance(data, dict) else None) or v or ""
-    timestamp = (data.get("timestamp") if isinstance(data, dict) else None) or t or "00:00"
-    title = (data.get("title") if isinstance(data, dict) else None) or ""
+    d = data if isinstance(data, dict) else {}
+    question = d.get("question") or q or ""
+    video_id = d.get("video_id") or v or ""
+    timestamp = d.get("timestamp") or t or "00:00"
+    title = d.get("title") or ""
+    req_provider, req_model = normalize_provider(d.get("provider") or provider, d.get("model") or model)
 
     if not question:
-        return {"success": False, "error": "No question provided"}
+        return {"success": False, "error": "No question provided", "answer": "Please type a question."}
 
-    # Fetch context from cache
-    cached = VERIFICATION_CACHE.get(video_id) or {}
-    intel = cached.get("intel", "Video under factual review.")
+    vid, _ = extract_video_id_and_title(video_id, title)
+    cached = VERIFICATION_CACHE.get(vid) or VERIFICATION_CACHE.get(video_id) or {}
+    intel = cached.get("intel", "")
     cards = cached.get("cards", [])
 
-    cards_summary = "\n".join([
-        f"- [{c.get('verdict')}] at {c.get('timestamp')}: \"{c.get('quote')}\" -> {c.get('explanation')} (Authority: {c.get('source')}, Fallacy: {c.get('fallacy', 'None')})"
-        for c in cards[:8]
-    ])
+    try:
+        answer_text, used_model = await ai_engine.ask_assistant(
+            question=question, video_id=video_id, timestamp=timestamp, title=title,
+            cards=cards, intel=intel, provider=req_provider, model=req_model
+        )
+    except Exception as e:
+        msg = f"Assistant unavailable: {e}"
+        return {"success": False, "error": msg, "answer": "⚠️ " + msg, "model": "unavailable"}
 
-    ask_prompt = f"""You are LiveTruth Shield's in-player real-time fact-checking assistant.
-A viewer is watching a video titled "{title}" (Video ID: {video_id}) around timestamp [{timestamp}].
-Audited Topic Intel: {intel}
-Audited Timeline Claims:
-{cards_summary}
-
-The viewer asks: "{question}"
-
-Instructions:
-1. Provide a direct, authoritative, and scientifically rigorous explanation in 2 to 3 concise sentences.
-2. Ground your answer in primary scientific consensus (e.g. PubMed, WHO, IEEE, Nature, UN).
-3. If the viewer asks about a specific misconception or fallacy, clearly state what the empirical reality is.
-4. Keep the tone helpful, objective, and sharp. Do NOT include conversational filler like 'Sure!' or 'Here is your answer'."""
-
-    answer_text = None
-    used_model = "Gemini 3.8 High Reasoning"
-
-    if client:
-        for m in ["gemini-3.8-flash", "gemini-3.1-flash-lite"]:
-            try:
-                resp = await asyncio.to_thread(
-                    client.models.generate_content,
-                    model=m,
-                    contents=ask_prompt,
-                    config=types.GenerateContentConfig(
-                        temperature=0.2,
-                        thinking_config=types.ThinkingConfig(thinking_level=types.ThinkingLevel.HIGH)
-                    )
-                )
-                if resp and resp.text:
-                    answer_text = resp.text.strip()
-                    used_model = f"{m} (High Reasoning)"
-                    break
-            except Exception:
-                try:
-                    resp = await asyncio.to_thread(
-                        client.models.generate_content,
-                        model=m,
-                        contents=ask_prompt,
-                        config=types.GenerateContentConfig(temperature=0.2)
-                    )
-                    if resp and resp.text:
-                        answer_text = resp.text.strip()
-                        used_model = f"{m}"
-                        break
-                except Exception:
-                    continue
-
-    if not answer_text:
-        # Contextual fallback based on audited cards
-        matching_card = None
-        for c in cards:
-            if c.get("timestamp") in timestamp or any(w in str(c.get("quote", "")).lower() for w in question.lower().split() if len(w) > 4):
-                matching_card = c
-                break
-
-        if matching_card:
-            answer_text = f"According to {matching_card.get('source')}, the statement '{matching_card.get('quote')}' is {matching_card.get('verdict')}. {matching_card.get('explanation')} Primary authority record: {matching_card.get('researchPaper') or matching_card.get('source')}."
-        else:
-            answer_text = f"Based on peer-reviewed consensus and the video audit: {intel} Primary verification confirms claims are monitored under institutional standards."
-
-    return {
-        "success": True,
-        "question": question,
-        "answer": answer_text,
-        "timestamp": timestamp,
-        "model": used_model
-    }
+    return {"success": True, "question": question, "answer": answer_text,
+            "timestamp": timestamp, "model": used_model}
 
 
 @app.post("/api/check-local")
-async def check_local_file(file: UploadFile = File(...)):
+async def check_local_file(
+    file: UploadFile = File(...),
+    provider: str = Query(None),
+    model: str = Query(None)
+):
     filename = file.filename or "uploaded_video.mp4"
     clean_title = os.path.splitext(filename)[0].replace("_", " ").replace("-", " ")
     clean_title = re.sub(r"\s+", " ", clean_title).strip()
-    print(f"[*] Auditing uploaded local file: '{filename}' (Title: '{clean_title}')...")
-    return await check_video(v=f"file:///{filename}", title=clean_title)
+    print(f"[*] Local file '{filename}' (title: '{clean_title}')...")
+    return await check_video(v=f"file:///{filename}", title=clean_title, channel="", provider=provider, model=model)
 
 
 @app.get("/api/check")
-
-
-
-async def check_video(v: str = Query(..., description="YouTube Video ID or URL"), title: str = Query("", description="Page or video title")):
-
-
-
-
-
-
-
+async def check_video(
+    v: str = Query(..., description="YouTube Video ID or URL"),
+    title: str = Query("", description="Page or video title"),
+    channel: str = Query("", description="Channel / creator name"),
+    provider: str = Query(None, description="Model provider: auto, deepseek, or gemini"),
+    model: str = Query(None, description="Specific model name")
+):
     video_id, title = extract_video_id_and_title(v, title)
     if not video_id:
-        print("[!] No valid video ID detected (empty or non-video page). Returning clean state.")
-        return {
-            "score": 0,
-            "intel": "No active video selected. Play a video or enter a URL above to test facts.",
-            "cards": []
-        }
+        return {"score": 0, "intel": "No active video selected. Play a video or enter a URL above.", "cards": []}
 
-    print(f"[*] Processing video: ID={video_id} | Title='{title}'")
+    provider, model = normalize_provider(provider, model)
+    status = ai_engine.get_ai_status()
+    if not status.get("deepseek_configured") and not status.get("gemini_configured"):
+        return error_payload("No AI API key configured. Open the AI Config button (gear) in the dashboard, or put "
+                             "GEMINI_API_KEY (free from aistudio.google.com/apikey) in backend/.env, then retry.")
 
-    # Instant Cache Lookup (Butter-Smooth 0ms response)
-    if video_id in VERIFICATION_CACHE:
-        print(f"[CACHE HIT] Serving instant cached fact-check for {video_id}")
-        return VERIFICATION_CACHE[video_id]
+    cache_key = f"{video_id}:{provider or 'default'}:{model or ''}"
+    if cache_key in VERIFICATION_CACHE:
+        print(f"[CACHE HIT] {cache_key}")
+        return VERIFICATION_CACHE[cache_key]
 
-    if not client:
-        print("[ Info ] Gemini client or API key not set, returning demo fallback")
-        data = get_fallback_demo_data(title or v, video_id)
-        VERIFICATION_CACHE[video_id] = data
-        return data
-
-    # Transcript or Deep Topic Grounding
-    text_chunk = ""
-    total_duration_sec = 0
-
-    if video_id.startswith("local_") or video_id.startswith("topic_"):
-        print(f"[*] Local video / topic media detected: '{title}'. Activating Deep Fact-Checking Engine...")
-        text_chunk = (
-            f"Media / Film Title: {title}\n"
-            f"Source: Local Video Playback ({video_id})\n"
-            f"Context: Perform a deep, exhaustive factual, scientific, historical, lore, and production accuracy audit of '{title}'.\n"
-            f"Analyze all key dialogue, physics, biological claims, historical figures, and narrative assertions."
-        )
-        total_duration_sec = 0
+    is_topic = video_id.startswith(("local_", "topic_")) or v.startswith("file:")
+    segments = []
+    if is_topic:
+        mode = "topic"
+        text_chunk = f"Title / topic: {title}"
     else:
-        text_chunk, total_duration_sec = fetch_youtube_transcript_text(video_id, title)
-
-    # Gemini Comprehensive Fact-Checking Prompt covering entire video timeline
-
-
+        mode = "transcript"
+        segments, terr = await asyncio.to_thread(fetch_youtube_transcript, video_id)
+        if not segments:
+            return error_payload(f"No captions/transcript could be fetched for this video ({terr[:200]}). "
+                                 "Real fact-checking needs the spoken text, so nothing was audited.")
+        text_chunk = build_transcript_text(segments)
 
     try:
-
-
-
-        prompt = f"""You are LiveTruth Shield, an elite real-time AI fact-checking engine.
-Perform an EXHAUSTIVE, HIGH-ACCURACY factual audit of this video dialogue from 00:00 to the end:
-
-{text_chunk}
-
-CRITICAL FACT-CHECKING RULES & METHODOLOGY:
-1. MANDATORY VOLUME: Extract between 8 and 14 distinct factual claims across the video timeline. Distribute claims chronologically from start to finish.
-2. ANTI-PEDANTRY & SPEECH-TO-TEXT (ASR) HOMOPHONE IMMUNITY:
-   - WARNING: The transcript is generated by Automated Speech Recognition (ASR / speech-to-text) and frequently transcribes words phonetically.
-   - NEVER classify a statement as 'FALSE' or 'MISLEADING' due to transcription spelling, phonetic typos, homophones, or missing punctuation!
-   - You must evaluate the SPEAKER'S ACTUAL INTENDED MEANING and conceptual veracity.
-2B. ANTI-TRIVIA & NARRATIVE FRAMING IMMUNITY (CRITICAL):
-   - NEVER extract conversational dates, calendar introductions, or narrative scene-setting remarks as factual claims!
-   - Spoken phrases like "It is October 26, 2026", "It is November 3rd", "Today is Monday", "Welcome to the video", or "In the year 2026" are narrative framing devices and storytelling hooks, NOT testable substantive claims.
-   - NEVER cite "NIST Time and Frequency Division", "Time.is", or a calendar to mark a narrative opening statement as FALSE!
-   - ONLY fact-check SUBSTANTIVE claims about technology architectures (e.g. DeepSeek MoE, KV caching, GPU memory throughput), corporate events, security vulnerabilities, research papers, benchmark figures, scientific mechanisms, or financial transactions.
-2C. TEMPORAL & HARDWARE PRODUCT GENERATION GROUNDING (CRITICAL FOR TECH / PHONES / REVIEWS):
-   - For consumer technology, smartphones, microprocessors, and AI models (e.g. Samsung Galaxy S series, Apple iPhone, Google Pixel, Nvidia RTX, Gemini/GPT versions):
-   - REALITY BASELINE: Samsung officially launched the Galaxy S25 series (S25, S25+, S25 Ultra) in January 2025 as its current flagship line. The Galaxy S24 series was released in January 2024 and is an older, previous generation.
-   - If a speaker or video asserts that the "Samsung Galaxy S24 is the latest Samsung phone / newest flagship" or presents the S24 as the current market benchmark:
-     - You MUST classify this claim as 'MISLEADING' or 'FALSE' (Outdated Generational Assertion).
-     - Quote: e.g. "The Samsung Galaxy S24 is the latest flagship phone from Samsung"
-     - Verdict: 'MISLEADING'
-     - Explanation: "Outdated product claim. The Galaxy S24 series was released in January 2024. Samsung has since launched the Galaxy S25 series (S25, S25+, S25 Ultra) in January 2025 powered by the Snapdragon 8 Elite platform, making S24 an older generation."
-     - Authority / Source: "Samsung Electronics Official Newsroom / GSMArena"
-     - Fallacy: "Outdated Information / Stale Premise"
-   - If a video mentions an unannounced future device (e.g. Galaxy S26, iPhone 18) as already released, classify as 'MISLEADING' (Unannounced / Speculative Rumor).
-3. RIGOROUS & SUBSTANTIVE FACT-CHECKING:
-   - Focus strictly on substantive empirical assertions: scientific principles, geographical realities, historical facts, dates, statistics, medical/biological claims, and technical mechanisms.
-   - Do NOT evaluate subjective opinions, jokes, idioms, or trivial grammar.
-   - Scrutinize the dialogue for REAL falsehoods, ungrounded pseudo-science, distorted numbers, misleading cause-and-effect claims, and marketing exaggerations.
-   - If the speaker makes genuine errors, classify them as 'FALSE' (completely disproven/wrong) or 'MISLEADING' (omits vital context or distorts data).
-   - If the speaker is scientifically and historically accurate, assign genuine 'VERIFIED' verdicts. Never invent fake mistakes.
-4. EVIDENCE & INSTITUTIONAL SOURCES:
-   - Geography & History: Encyclopedia Britannica, United Nations, National Geographic, national mapping agencies.
-   - Health & Medicine: PubMed Central, NIH, Nature, The Lancet, WHO, CDC, Mayo Clinic.
-   - Physics & Tech: IEEE, Nature, Science, MIT Technology Review, NASA, ESA, APS.
-   - Economics: World Bank, IMF, Federal Reserve, SEC.
-5. LOGICAL FALLACY & RHETORICAL MANIPULATION TAXONOMY:
-   - For FALSE or MISLEADING claims, identify the exact manipulation tactic in 'fallacy':
-     'Cherry-Picking', 'Correlation vs. Causation', 'Out-of-Context Quote', 'False Equivalence', 'Panic Bait / Exaggerated Risk', 'Pseudoscience', or 'None'.
-6. SCIENTIFIC & EMPIRICAL CONSENSUS:
-   - In 'consensus', assign: 'Universal Consensus' (settled empirical consensus), 'Academic Debate' (active ongoing debate in peer-reviewed journals), 'Marginal Pseudoscience' (fringe disproven claims), or 'N/A'.
-7. ABSTRACT & TRIAL EVIDENCE PREVIEW:
-   - In 'abstractPreview', provide a 1-2 sentence preview of the authoritative peer-reviewed abstract, clinical trial finding, or institutional record.
-8. VERDICTS: Strictly 'FALSE', 'MISLEADING', or 'VERIFIED'.
-9. COMPUTE TRUTH RELIABILITY SCORE (0-100%): Proportionate to the ratio of verified vs false/misleading statements.
-10. INTEL SUMMARY: Provide a sharp 1-2 sentence overview summarizing overall veracity, scientific consensus, and any substantive errors identified.
-
-Return ONLY a valid JSON object matching this schema:
-{{
-  "score": 85,
-  "intel": "Detailed evaluation of accuracy, consensus, and prominent factual errors.",
-  "cards": [
-    {{
-      "verdict": "VERIFIED",
-      "timestamp": "01:05",
-      "seconds": 65,
-      "quote": "the capital of South Korea is Seoul",
-      "explanation": "Seoul is the officially recognized capital and largest city of the Republic of Korea.",
-      "fallacy": "None",
-      "consensus": "Universal Consensus",
-      "source": "United Nations",
-      "sourceUrl": "https://www.un.org/en/about-us/member-states/republic-of-korea",
-      "researchPaper": "UN Cartographic Section: National Capitals",
-      "researchSummary": "Official geopolitical consensus designates Seoul as the national capital.",
-      "abstractPreview": "United Nations Cartographic Section designates Seoul as the official sovereign seat of government and capital.",
-      "dataOrigin": "United Nations Member States Database"
-    }}
-  ]
-}}"""
-
-        target_models = [
-            "gemini-3.8-flash",
-            "gemini-3.5-flash",
-            "gemini-3.1-flash-lite"
-        ]
-
-        raw_text = None
-        used_model = None
-
-        thinking_high = types.ThinkingConfig(thinking_level=types.ThinkingLevel.HIGH)
-
-        for m_name in target_models:
-            print(f"[*] Auditing claims using {m_name} (Thinking: HIGH)...")
-
-            # Tier 1: Gemini 3.8 High Reasoning with live Google Search Grounding
-            try:
-                response = await asyncio.to_thread(
-                    client.models.generate_content,
-                    model=m_name,
-                    contents=prompt,
-                    config=types.GenerateContentConfig(
-                        tools=[types.Tool(google_search=types.GoogleSearch())],
-                        response_mime_type="application/json",
-                        thinking_config=thinking_high,
-                        temperature=0.1
-                    )
-                )
-                raw_text = response.text.strip()
-                used_model = f"{m_name} (High Reasoning + Google Search)"
-                break
-            except Exception as e_search:
-                print(f"[!] {m_name} search grounding unavailable: {e_search}. Trying High Reasoning direct...")
-
-                # Tier 2: Gemini 3.8 High Reasoning Autonomous Deep Knowledge
-                try:
-                    response = await asyncio.to_thread(
-                        client.models.generate_content,
-                        model=m_name,
-                        contents=prompt,
-                        config=types.GenerateContentConfig(
-                            response_mime_type="application/json",
-                            thinking_config=thinking_high,
-                            temperature=0.1
-                        )
-                    )
-                    raw_text = response.text.strip()
-                    used_model = f"{m_name} (High Reasoning)"
-                    break
-                except Exception as e_high:
-                    print(f"[!] {m_name} high thinking unavailable: {e_high}. Trying fast standard fallback...")
-
-                    # Tier 3: Standard generation if high demand spike occurs
-                    try:
-                        await asyncio.sleep(0.5)
-                        response = await asyncio.to_thread(
-                            client.models.generate_content,
-                            model=m_name,
-                            contents=prompt,
-                            config=types.GenerateContentConfig(
-                                response_mime_type="application/json",
-                                temperature=0.1
-                            )
-                        )
-                        raw_text = response.text.strip()
-                        used_model = f"{m_name} (Fast Fallback)"
-                        break
-                    except Exception as e_std:
-                        continue
-
-        if not raw_text:
-
-
-
-            print("[Info] Live AI quota exhausted across models, serving fast demo cache.")
-
-
-
-            return get_fallback_demo_data(title or v, video_id)
-
-
-
-
-
-
-
-        if raw_text.startswith("```json"):
-
-
-
-            raw_text = raw_text[7:]
-
-
-
-        if raw_text.startswith("```"):
-
-
-
-            raw_text = raw_text[3:]
-
-
-
-        if raw_text.endswith("```"):
-
-
-
-            raw_text = raw_text[:-3]
-
-
-
-
-
-
-
-        parsed = json.loads(raw_text.strip())
-
-
-
-        
-
-
-
-        # Sanitize cards: never include system errors or N/A quotes as FALSE facts
-
-
-
-        raw_cards = parsed.get("cards", [])
-
-
-
-        clean_cards = []
-
-
-
-        for c in raw_cards:
-
-
-
-            q = str(c.get("quote", "")).strip()
-
-
-
-            src = str(c.get("source", "")).strip().lower()
-
-
-
-            exp = str(c.get("explanation", "")).strip().lower()
-
-
-
-            if q.upper() in ["N/A", "NONE", "NULL", ""] or "system error" in src or "malformed" in exp or "non-existent" in exp:
-                continue
-
-            # SMART WORK FILTER: Drop trivial conversational dates and calendar lookups
-            clean_q = q.lower().replace('"', '').replace("'", "").strip()
-            date_intros = ("it is ", "today is ", "the date is ", "it's ", "in the year ")
-            months_days = ("2024", "2025", "2026", "2027", "2028", "2030", "january", "february", "march", "april", "may", "june", "july", "august", "september", "october", "november", "december", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday")
-            is_date_intro = any(clean_q.startswith(p) for p in date_intros) and any(w in clean_q for w in months_days)
-            clock_terms = ("nist time", "calendar", "current date", "time.is", "clock division", "time and frequency")
-            is_clock_source = any(k in src for k in clock_terms)
-            if is_date_intro or is_clock_source:
-                print(f"[*] Smart Filter dropped non-substantive date claim: '{q}' ({src})")
-                continue
-
-            clean_cards.append(c)
-
-
-
-
-
-
-
-        parsed["cards"] = clean_cards
-
-
-
-        # Normalize score to int
-
-
-
-        raw_score = parsed.get("score", 70)
-
-
-
-        if isinstance(raw_score, str):
-
-
-
-            digits = "".join([c for c in raw_score.split("/")[0] if c.isdigit()])
-
-
-
-            parsed["score"] = int(digits) if digits else 70
-
-
-
-        elif isinstance(raw_score, (int, float)):
-
-
-
-            parsed["score"] = int(raw_score)
-
-
-
-        else:
-
-
-
-            parsed["score"] = 70
-
-
-
-
-
-
-
-        if not clean_cards:
-
-
-
-            parsed["score"] = 0
-
-
-
-            if "invalid" in parsed.get("intel", "").lower() or "malformed" in parsed.get("intel", "").lower():
-
-
-
-                parsed["intel"] = "No verifiable claims detected."
-
-
-
-
-
-
-
-        parsed["model"] = used_model or "Gemini 3.8 High Reasoning"
-        parsed["thinking_level"] = "HIGH"
-        print(f"[+] Successfully fact-checked live using {used_model}! Extracted {len(clean_cards)} valid claims.")
-
-
-
-        VERIFICATION_CACHE[video_id] = parsed
-
-
-
-        if len(VERIFICATION_CACHE) > MAX_CACHE_SIZE:
-
-
-
-            VERIFICATION_CACHE.pop(next(iter(VERIFICATION_CACHE)))
-
-
-
-        return parsed
-
-
-
-
-
-
-
+        parsed, used_model = await ai_engine.audit_claims(
+            text_chunk=text_chunk, title=title, video_id=video_id,
+            provider=provider, model=model, mode=mode, segments=segments
+        )
     except Exception as err:
+        print(f"[Error] Live AI verification failed: {err}")
+        return error_payload(f"Live AI verification failed: {err}")
 
-
-
-        print(f"[Error] Gemini API verification failed: {err}")
-
-
-
-        return get_fallback_demo_data(title or v, video_id)
-
-
-
-
-
+    print(f"[+] Fact-checked with {used_model}: {len(parsed.get('cards', []))} claims.")
+    parsed["video_id"] = video_id
+    VERIFICATION_CACHE[cache_key] = parsed
+    VERIFICATION_CACHE[video_id] = parsed
+    while len(VERIFICATION_CACHE) > MAX_CACHE_SIZE * 2:
+        VERIFICATION_CACHE.pop(next(iter(VERIFICATION_CACHE)))
+    record_channel_audit(channel, video_id, title, parsed)
+    return parsed
 
 
 def free_port_5000():

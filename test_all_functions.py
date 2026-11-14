@@ -147,7 +147,8 @@ def run_tests():
         results.append(log_test("Local Video Upload (/api/check-local)", False, str(e)))
 
     # 11. Chrome Extension Manifest & File Structure Validation
-    ext_dir = r"d:\Project\livetruth-shield\extension"
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    ext_dir = os.path.join(base_dir, "extension")
     manifest_path = os.path.join(ext_dir, "manifest.json")
     try:
         with open(manifest_path, "r", encoding="utf-8") as f:
@@ -190,13 +191,10 @@ def run_tests():
     except Exception as e:
         results.append(log_test("Extension Content Script Capabilities", False, str(e)))
 
-    # 14. Desktop & Project PPTX Integrity Check
-    desktop_ppt = r"C:\Users\Acer\Desktop\LiveTruth_Shield_Presentation.pptx"
-    project_ppt = r"d:\Project\livetruth-shield\LiveTruth_Shield_Presentation.pptx"
-    d_exists = os.path.exists(desktop_ppt) and os.path.getsize(desktop_ppt) > 10000
-    p_exists = os.path.exists(project_ppt) and os.path.getsize(project_ppt) > 10000
-    ok = d_exists and p_exists
-    results.append(log_test("PPTX File Availability (Desktop & Project)", ok, f"Desktop={os.path.getsize(desktop_ppt) if d_exists else 0} bytes, Project={os.path.getsize(project_ppt) if p_exists else 0} bytes"))
+    # 14. Presentation Slide Deck Integrity Check
+    pres_file = os.path.join(base_dir, "presentation.html")
+    p_exists = os.path.exists(pres_file) and os.path.getsize(pres_file) > 10000
+    results.append(log_test("Presentation Deck Availability", p_exists, f"presentation.html={os.path.getsize(pres_file) if p_exists else 0} bytes"))
 
     print("=" * 65)
     passed = sum(1 for r in results if r)

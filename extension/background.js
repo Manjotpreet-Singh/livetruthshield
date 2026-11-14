@@ -13,7 +13,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === "checkVideo") {
     const videoId = request.videoId;
     const title = request.title || "";
-    const path = `/api/check?v=${encodeURIComponent(videoId)}&title=${encodeURIComponent(title)}`;
+    const path = `/api/check?v=${encodeURIComponent(videoId)}&title=${encodeURIComponent(title)}&channel=${encodeURIComponent(request.channel || "")}`;
 
     fetchWithFallback(path)
       .then(data => sendResponse({ success: true, data: data }))

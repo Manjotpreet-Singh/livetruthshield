@@ -454,7 +454,7 @@
 
       <div id="lt-intel-box">
 
-        <div class="lt-intel-tag" id="lt-intel-tag">Gemini 3.8 High Intel</div>
+        <div class="lt-intel-tag" id="lt-intel-tag">AI Fact-Check</div>
 
         <div id="lt-video-title">No Video Active</div>
 
@@ -634,7 +634,7 @@
 
       const loadingBubble = document.createElement("div");
       loadingBubble.className = "lt-chat-msg bot";
-      loadingBubble.innerText = "Thinking with Gemini 3.8 High Reasoning...";
+      loadingBubble.innerText = "Searching & reasoning...";
       asstChat.appendChild(loadingBubble);
       asstChat.scrollTop = asstChat.scrollHeight;
 
@@ -648,7 +648,7 @@
         const botBubble = document.createElement("div");
         botBubble.className = "lt-chat-msg bot";
         if (resp && resp.success && resp.data) {
-          botBubble.innerHTML = `${resp.data.answer || "No response received."} <div style="font-size:9.5px; color:#60A5FA; margin-top:3px; font-family:var(--lt-mono);">⚡ ${resp.data.model || 'Gemini 3.8 High'}</div>`;
+          botBubble.innerHTML = `${resp.data.answer || "No response received."} <div style="font-size:9.5px; color:#60A5FA; margin-top:3px; font-family:var(--lt-mono);">⚡ ${resp.data.model || 'AI'}</div>`;
         } else {
           botBubble.innerText = (resp && resp.error) || "Could not reach assistant. Is backend running?";
         }
@@ -768,7 +768,7 @@
 
         });
 
-        report += `*Audited by LiveTruth Shield (Team HyperSyntax) using Google Gemini 3.8 High Reasoning & Live Search Grounding.*\n`;
+        report += `*Audited by LiveTruth Shield (Team HyperSyntax) using live AI search & reasoning.*\n`;
 
 
 
@@ -938,7 +938,7 @@
 
 
 
-    const cleanTitle = customTitle || getCleanVideoTitle();
+    const cleanTitle = getCleanVideoTitle();
 
     if (titleEl) titleEl.innerText = cleanTitle || "Video Ready";
 
@@ -1423,7 +1423,7 @@
 
     if (titleEl) titleEl.innerText = cleanTitle;
 
-    if (summaryEl) summaryEl.innerText = "Scanning dialogue & grounding claims with Gemini 3.8 High Reasoning...";
+    if (summaryEl) summaryEl.innerText = "Scanning dialogue & grounding claims with live AI search...";
 
     if (statusBadge) statusBadge.innerText = "Auditing...";
 
@@ -1481,7 +1481,7 @@
 
     try {
 
-      chrome.runtime.sendMessage({ action: "checkVideo", videoId: (videoId || pageUrl), title: cleanTitle }, (response) => {
+      chrome.runtime.sendMessage({ action: "checkVideo", videoId: (videoId || pageUrl), title: cleanTitle, channel: (getCleanVideoInfo().channel || "") }, (response) => {
 
         isFetching = false;
 
@@ -1505,7 +1505,7 @@
                 const cvBox = document.getElementById("lt-creator-veracity-box");
                 const cvScore = document.getElementById("lt-cv-score");
                 const cvDesc = document.getElementById("lt-cv-desc");
-                if (cvBox && cvScore) {
+                if (cvBox && cvScore && res.data.veracity_score !== null && res.data.veracity_score !== undefined) {
                   cvBox.style.display = "flex";
                   cvScore.innerText = `${res.data.veracity_score}%`;
                   if (cvDesc) {
@@ -1765,7 +1765,7 @@
     if (statusBadge) statusBadge.innerText = "Audited";
     const intelTag = document.getElementById("lt-intel-tag");
     if (intelTag) {
-      intelTag.innerText = modelName ? "⚡ " + modelName : "Gemini 3.8 High Intel";
+      intelTag.innerText = modelName ? "⚡ " + modelName : "AI Fact-Check";
     }
 
     if (scoreVal) scoreVal.innerText = `${score}%`;
