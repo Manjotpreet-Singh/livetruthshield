@@ -67,6 +67,13 @@
   transform: translateY(0) scale(0.98) translateZ(0);
 }
 
+body.lt-panel-open #livetruth-btn,
+#livetruth-panel.open ~ #livetruth-btn {
+  opacity: 0 !important;
+  pointer-events: none !important;
+  transform: scale(0.8) translateZ(0) !important;
+}
+
 /* 2. Sleek Minimalist Sidebar */
 #livetruth-panel {
   position: fixed;
@@ -89,6 +96,15 @@
   border-top-left-radius: 16px;
   border-bottom-left-radius: 16px;
   overflow: hidden;
+}
+
+body.lt-on-instagram #livetruth-panel {
+  top: 0 !important;
+  height: 100vh !important;
+  width: 385px !important;
+  border-top-left-radius: 16px;
+  border-bottom-left-radius: 16px;
+  box-shadow: -20px 0 60px rgba(0, 0, 0, 0.85);
 }
 
 #livetruth-panel.open {

@@ -5,15 +5,23 @@ cls
 
 echo =========================================================================
 echo   SHIELD // LiveTruth Universal Real-Time AI Fact-Checking Engine
-echo   Powered by Google Gemini 3 + Live Search Grounding
+echo   Powered by live AI search (Gemini / DeepSeek)
 echo =========================================================================
 echo.
 echo [*] Initializing LiveTruth Shield environment...
 
 cd /d "%~dp0backend"
 
-set "PYTHON_EXE=C:\Users\Acer\anaconda3\python.exe"
-if not exist "%PYTHON_EXE%" set "PYTHON_EXE=python"
+set "PYTHON_EXE=python"
+where python >nul 2>&1 || set "PYTHON_EXE=py -3"
+echo [*] Installing/checking dependencies (first run takes a minute)...
+%PYTHON_EXE% -m pip install -q -r requirements.txt
+if errorlevel 1 (
+    echo [!] Dependency install failed. Check your internet connection.
+    pause
+    exit /b 1
+)
+if not exist ".env" echo [!] No backend\.env found - add GEMINI_API_KEY=... or DEEPSEEK_API_KEY=... or use the dashboard AI Config.
 
 echo [*] Using Python interpreter: %PYTHON_EXE%
 echo [*] Freeing port 5000 if previously occupied...
@@ -31,7 +39,7 @@ echo   Chrome Extension: Load 'livetruth-shield\extension' in chrome://extension
 echo =========================================================================
 echo.
 
-"%PYTHON_EXE%" main.py
+%PYTHON_EXE% main.py
 
 if %ERRORLEVEL% NEQ 0 (
     echo.

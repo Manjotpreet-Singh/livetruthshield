@@ -3,21 +3,23 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 [![Python: 3.10+](https://img.shields.io/badge/Python-3.10+-3776AB.svg?logo=python&logoColor=white)](https://python.org)
 [![Chrome Extension: Manifest V3](https://img.shields.io/badge/Chrome_Extension-Manifest_V3-4285F4.svg?logo=googlechrome&logoColor=white)](https://developer.chrome.com/docs/extensions/mv3/intro/)
-[![Gemini: 3.8 & 3.1 Flash](https://img.shields.io/badge/Google_Gemini-3.8_%26_3.1_Flash-8E75C2.svg?logo=google&logoColor=white)](https://aistudio.google.com/)
+[![DeepSeek: V3 & R1](https://img.shields.io/badge/DeepSeek-V3_%26_R1_Reasoner-10B981.svg?logo=deepseek&logoColor=white)](https://platform.deepseek.com/)
+[![Google Gemini: 2.5 & 2.0](https://img.shields.io/badge/Google_Gemini-2.5_%26_2.0_Flash-8E75C2.svg?logo=google&logoColor=white)](https://aistudio.google.com/)
 [![Tailwind CSS: Dark Theme](https://img.shields.io/badge/Tailwind_CSS-Dark_Theme-38B2AC.svg?logo=tailwindcss&logoColor=white)](https://tailwindcss.com)
 
 > **The Problem:** Over 500 hours of video are uploaded online every minute. False health remedies, financial scams, altered historical claims, and sensationalist clickbait spread 6x faster than verified facts. Viewers rarely pause a video to manually cross-reference sources.
 >
-> **The Solution:** **LiveTruth Shield** is an autonomous, real-time AI fact-checking engine built for YouTube, web video players, and local video files. Powered by **Google Gemini with Live Search Grounding**, it scans spoken dialogue across the video timeline, resolves speech-to-text phonetic ambiguities, verifies claims against authoritative global repositories (e.g. Nature, IEEE, NIH, WHO, FAA, CISA), and renders an interactive **Truth Timeline**, **Clickbait Index**, and expandable **Evidence Dossiers**.
+> **The Solution:** **LiveTruth Shield** is an autonomous, real-time AI fact-checking engine built for YouTube, web video players, and local video files. Powered by a **Hybrid Multi-Model Engine (DeepSeek-V3, DeepSeek-R1 Reasoner, and Google Gemini with Live Search Grounding)**, it scans spoken dialogue across the video timeline, resolves speech-to-text phonetic ambiguities, verifies claims against authoritative global repositories (e.g. Nature, IEEE, NIH, WHO, FAA, CISA), and renders an interactive **Truth Timeline**, **Clickbait Index**, and expandable **Evidence Dossiers**.
 
 ---
 
 ## ✨ Key Capabilities
 
-### 1. 🔍 Dual-Engine Fact Verification & Live Grounding
-- **Primary Engine:** Google Gemini 3.8 / 3.1 Flash with real-time **Google Search Grounding**.
-- **Fuzzy STT & Entity Resolution:** Intelligently resolves phonetic speech-to-text typos (e.g. *"Trader Trader"* → *"TraderTraitor"* hacking group).
-- **Mandatory Grounding Guardrails:** Eliminates ungrounded `FALSE` flags by requiring authoritative citation backing before issuing refutations.
+### 1. 🔍 Multi-Model AI Engine (DeepSeek + Google Gemini)
+- **DeepSeek-R1 & DeepSeek-V3:** Extreme analytical depth, formal logic verification, and chain-of-thought fallacy detection.
+- **Google Gemini 2.5 & 2.0 Flash:** Ultra-fast multi-modal reasoning backed by live Google Search grounding.
+- **Intelligent Auto-Hybrid Mode:** Automatically routes to the highest-performing active provider with seamless zero-downtime fallback.
+- **In-Console Model Switcher:** Switch between DeepSeek-V3, DeepSeek-R1, and Gemini 2.5 Flash on the fly directly in the web dashboard!
 
 ### 2. 🎭 Context & Genre Intelligence
 - **Intelligent Classification:** Detects whether a video is *Entertainment & Stunts*, *Satire & Parody*, *Science & Tech*, or *News & Politics*.

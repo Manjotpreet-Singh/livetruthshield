@@ -13,7 +13,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === "checkVideo") {
     const videoId = request.videoId;
     const title = request.title || "";
-    const path = `/api/check?v=${encodeURIComponent(videoId)}&title=${encodeURIComponent(title)}`;
+    const path = `/api/check?v=${encodeURIComponent(videoId)}&title=${encodeURIComponent(title)}&channel=${encodeURIComponent(request.channel || "")}`;
 
     fetchWithFallback(path)
       .then(data => sendResponse({ success: true, data: data }))
@@ -23,6 +23,27 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
           success: false,
           error: "Backend server is not running on port 5000. Start backend with start.bat."
         });
+      });
+    return true;
+  }
+
+  if (request.action === "checkInstagramReel") {
+    const reelUrl = request.reelUrl;
+    const path = `/api/instagram-reel`;
+
+    fetchWithFallback(path, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        reelUrl: reelUrl,
+        title: request.title || "",
+        caption: request.caption || ""
+      })
+    })
+      .then(data => sendResponse({ success: true, data: data }))
+      .catch(err => {
+        console.warn("[LiveTruth] IG Reel error:", err.message);
+        sendResponse({ success: false, error: "Backend unreachable on port 5000" });
       });
     return true;
   }

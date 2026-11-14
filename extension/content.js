@@ -146,28 +146,99 @@
 
 
 
-  function isWatchPage() {
-
-    if (!window.location.hostname.includes("youtube.com")) return true;
-
-    return window.location.pathname === "/watch";
-
+  function isInstagramReelPage() {
+    if (!window.location.hostname.includes("instagram.com")) return false;
+    const p = window.location.pathname;
+    return p.startsWith("/reel/") || p.startsWith("/reels/") || p.match(/^\/reel\//);
   }
 
+  function getInstagramReelInfo() {
+    let title = "";
+    let caption = "";
+    try {
+      const captionSelectors = [
+        "h1._aacl",
+        "article h1",
+        "article [role='button'] span",
+        "span._aacl._aaco._aacu._aacx._aad7._aade",
+        "div[data-testid='post-comment-root'] span",
+        "div[class*='caption']",
+        "article span"
+      ];
+      for (const sel of captionSelectors) {
+        const el = document.querySelector(sel);
+        if (el && el.innerText && el.innerText.trim().length > 3) {
+          caption = el.innerText.trim();
+          break;
+        }
+      }
+      const ogDesc = document.querySelector('meta[property="og:description"], meta[name="description"]');
+      if (ogDesc && ogDesc.content) {
+        if (!caption) caption = ogDesc.content.trim();
+      }
+      const ogTitle = document.querySelector('meta[property="og:title"]');
+      if (ogTitle && ogTitle.content) title = ogTitle.content.trim();
+      if (!title) {
+        title = document.title.replace(/\s*•\s*Instagram.*$/i, "").trim() || "Instagram Reel";
+      }
+    } catch (e) { }
+    return { title, caption };
+  }
 
+  function showInstagramResults(data) {
+    if (!data) return;
+    if (!isOpen) togglePanel();
+    if (data.cards && data.cards.length > 0) {
+      renderCards(data.cards, data.score, data.intel, data.model || "Groq Turbo (IG Reel)");
+    } else {
+      renderEmptyState(data.intel || "No testable factual claims detected in this Instagram Reel.");
+    }
+  }
+
+  function checkAndAuditInstagramReel() {
+    if (!isInstagramReelPage()) return;
+    const statusPill = document.getElementById("lt-pill-status");
+    if (statusPill) statusPill.innerText = "AUDITING...";
+    const info = getInstagramReelInfo();
+    chrome.runtime.sendMessage({
+      action: "checkInstagramReel",
+      reelUrl: window.location.href,
+      title: info.title,
+      caption: info.caption
+    }, (resp) => {
+      if (statusPill) statusPill.innerText = "READY";
+      if (resp && resp.success && resp.data) {
+        showInstagramResults(resp.data);
+      } else if (resp && resp.error) {
+        renderEmptyState(resp.error);
+      }
+    });
+  }
+
+  function isWatchPage() {
+    if (isInstagramReelPage()) return true;
+    if (!window.location.hostname.includes("youtube.com")) return true;
+    const p = window.location.pathname;
+    return p === "/watch" || p.startsWith("/shorts/") || p.startsWith("/live/");
+  }
 
   function getYouTubeVideoId() {
-
     if (!window.location.hostname.includes("youtube.com")) return null;
-
-    if (window.location.pathname !== "/watch") return null;
-
-    const params = new URLSearchParams(window.location.search);
-
-    const v = params.get("v");
-
-    return (v && v.length >= 6) ? v : null;
-
+    const p = window.location.pathname;
+    if (p.startsWith("/shorts/")) {
+      const parts = p.split("/shorts/")[1].split("/")[0].split("?")[0];
+      if (parts && parts.length >= 6) return parts;
+    }
+    if (p.startsWith("/live/")) {
+      const parts = p.split("/live/")[1].split("/")[0].split("?")[0];
+      if (parts && parts.length >= 6) return parts;
+    }
+    if (p === "/watch") {
+      const params = new URLSearchParams(window.location.search);
+      const v = params.get("v");
+      return (v && v.length >= 6) ? v : null;
+    }
+    return null;
   }
 
 
@@ -192,7 +263,7 @@
 
       }
 
-    } catch (e) {}
+    } catch (e) { }
 
 
 
@@ -234,7 +305,7 @@
 
         }
 
-      } catch (e) {}
+      } catch (e) { }
 
     }
 
@@ -264,7 +335,7 @@
             title = clean;
           }
         }
-      } catch (e) {}
+      } catch (e) { }
     }
 
     if (!title) title = "Live Video";
@@ -305,7 +376,7 @@
 
       }
 
-    } catch (e) {}
+    } catch (e) { }
 
 
 
@@ -328,10 +399,14 @@
     if (document.getElementById("livetruth-btn")) return;
 
     const video = getActiveVideoElement();
+    const isYT = window.location.hostname.includes("youtube.com");
+    const isIG = isInstagramReelPage();
 
-    if (!video && !window.location.hostname.includes("youtube.com")) return;
+    if (!video && !isYT && !isIG) return;
 
-
+    if (isIG || window.location.hostname.includes("instagram.com")) {
+      document.body.classList.add("lt-on-instagram");
+    }
 
     // 1. Sleek Floating Action Pill
 
@@ -355,7 +430,12 @@
 
     `;
 
-    btn.addEventListener("click", togglePanel);
+    btn.addEventListener("click", () => {
+      togglePanel();
+      if (isInstagramReelPage()) {
+        checkAndAuditInstagramReel();
+      }
+    });
 
     document.body.appendChild(btn);
 
@@ -952,7 +1032,7 @@
 
     if (trackEl) trackEl.innerHTML = `<span style="color:var(--lt-text-dim); font-size:10px;">Waiting for playback...</span>`;
 
-    
+
 
     if (verdictSummary) {
 
@@ -968,7 +1048,7 @@
 
     }
 
-    
+
 
     if (summaryEl) summaryEl.innerText = "Video is not playing. Play video or paste URL above to test.";
 
@@ -1020,7 +1100,7 @@
 
     if (trackEl) trackEl.innerHTML = "<span style='color:var(--lt-text-dim); font-size:10px;'>No claims</span>";
 
-    
+
 
     if (verdictSummary) {
 
@@ -1319,11 +1399,28 @@
 
     if (panel) panel.classList.toggle("open", isOpen);
 
+    document.body.classList.toggle("lt-panel-open", isOpen);
+
   }
 
 
 
   function checkPlaybackStateChange() {
+
+    if (isInstagramReelPage()) {
+      const url = window.location.href;
+      if (url !== activeVideoKey) {
+        activeVideoKey = url;
+        hasAnalyzedCurrentVideo = false;
+        playedAlerts.clear();
+        currentCards = [];
+        currentActiveIndex = -1;
+        if (isOpen) {
+          checkAndAuditInstagramReel();
+        }
+      }
+      return;
+    }
 
     if (!isWatchPage()) {
 
@@ -1479,258 +1576,289 @@
 
 
 
+    const isInstagram = isInstagramReelPage() || (videoId && String(videoId).includes("instagram.com")) || (pageUrl && String(pageUrl).includes("instagram.com"));
+    if (isInstagram) {
+      const reelUrl = (pageUrl && pageUrl.includes("instagram.com")) ? pageUrl : (videoId && String(videoId).includes("instagram.com") ? videoId : window.location.href);
+      const igInfo = getInstagramReelInfo();
+      try {
+        chrome.runtime.sendMessage({
+          action: "checkInstagramReel",
+          reelUrl: reelUrl,
+          title: cleanTitle || igInfo.title,
+          caption: igInfo.caption
+        }, (response) => {
+          isFetching = false;
+          if (chrome.runtime.lastError) {
+            renderEmptyState("LiveTruth backend unreachable. Please run Run_LiveTruth_Shield.bat.");
+            return;
+          }
+          if (response && response.success && response.data && response.data.cards && response.data.cards.length > 0) {
+            renderCards(response.data.cards, response.data.score, response.data.intel, response.data.model);
+          } else if (response && response.success && response.data) {
+            renderEmptyState(response.data.intel || "No verifiable claims found in this reel.");
+          } else {
+            renderEmptyState(response ? response.error : "Backend not running on port 5000. Start backend with Run_LiveTruth_Shield.bat.");
+          }
+        });
+      } catch (e) {
+        isFetching = false;
+        renderEmptyState("LiveTruth backend unreachable. Please run Run_LiveTruth_Shield.bat.");
+      }
+      return;
+    }
+
     try {
 
-      chrome.runtime.sendMessage({ action: "checkVideo", videoId: (videoId || pageUrl), title: cleanTitle }, (response) => {
+        chrome.runtime.sendMessage({ action: "checkVideo", videoId: (videoId || pageUrl), title: cleanTitle }, (response) => {
+
+          isFetching = false;
+
+          if (chrome.runtime.lastError) {
+
+            renderEmptyState("LiveTruth backend unreachable. Please run start.bat in livetruth-shield/backend.");
+
+            return;
+
+          }
+
+          if (response && response.success && response.data && response.data.cards && response.data.cards.length > 0) {
+
+            renderCards(response.data.cards, response.data.score, response.data.intel, response.data.model);
+
+            // Creator Veracity Index Query
+            const channelInfo = getCleanVideoInfo();
+            if (channelInfo.channel && channelInfo.channel.toLowerCase() !== "youtube") {
+              chrome.runtime.sendMessage({ action: "getChannelScore", channel: channelInfo.channel }, (res) => {
+                if (res && res.success && res.data) {
+                  const cvBox = document.getElementById("lt-creator-veracity-box");
+                  const cvScore = document.getElementById("lt-cv-score");
+                  const cvDesc = document.getElementById("lt-cv-desc");
+                    if (cvBox && cvScore) {
+                      cvBox.style.display = "flex";
+                      cvScore.innerText = `${res.data.veracity_score}%`;
+                      if (cvDesc) {
+                        cvDesc.innerText = `${res.data.total_claims} claims audited (${res.data.rating})`;
+                      }
+                    }
+                  }
+                });
+            }
+
+          } else if (response && response.success && response.data) {
+
+            renderEmptyState(response.data.intel || "No verifiable claims found for this video.");
+
+          } else if (response && response.error) {
+
+            renderEmptyState(response.error);
+
+          } else {
+
+            renderEmptyState("Backend not running on port 5000. Start backend with start.bat.");
+
+          }
+
+        });
+
+      } catch (err) {
 
         isFetching = false;
 
-        if (chrome.runtime.lastError) {
+        renderEmptyState("Could not reach backend at localhost:5000. Start backend with start.bat.");
 
-          renderEmptyState("LiveTruth backend unreachable. Please run start.bat in livetruth-shield/backend.");
-
-          return;
-
-        }
-
-        if (response && response.success && response.data && response.data.cards && response.data.cards.length > 0) {
-
-          renderCards(response.data.cards, response.data.score, response.data.intel, response.data.model);
-
-          // Creator Veracity Index Query
-          const channelInfo = getCleanVideoInfo();
-          if (channelInfo.channel && channelInfo.channel.toLowerCase() !== "youtube") {
-            chrome.runtime.sendMessage({ action: "getChannelScore", channel: channelInfo.channel }, (res) => {
-              if (res && res.success && res.data) {
-                const cvBox = document.getElementById("lt-creator-veracity-box");
-                const cvScore = document.getElementById("lt-cv-score");
-                const cvDesc = document.getElementById("lt-cv-desc");
-                if (cvBox && cvScore) {
-                  cvBox.style.display = "flex";
-                  cvScore.innerText = `${res.data.veracity_score}%`;
-                  if (cvDesc) {
-                    cvDesc.innerText = `${res.data.total_claims} claims audited (${res.data.rating})`;
-                  }
-                }
-              }
-            });
-          }
-
-        } else if (response && response.success && response.data) {
-
-          renderEmptyState(response.data.intel || "No verifiable claims found for this video.");
-
-        } else if (response && response.error) {
-
-          renderEmptyState(response.error);
-
-        } else {
-
-          renderEmptyState("Backend not running on port 5000. Start backend with start.bat.");
-
-        }
-
-      });
-
-    } catch (err) {
-
-      isFetching = false;
-
-      renderEmptyState("Could not reach backend at localhost:5000. Start backend with start.bat.");
+      }
 
     }
-
-  }
 
 
 
   
   function injectYouTubeScrubberHeatmap(cards) {
-    try {
-      if (!window.location.hostname.includes("youtube.com")) return;
-      const video = getActiveVideoElement();
-      if (!video) return;
-      const bar = document.querySelector(".ytp-progress-bar, .ytp-progress-bar-container");
-      if (!bar) return;
+      try {
+        if (!window.location.hostname.includes("youtube.com")) return;
+        const video = getActiveVideoElement();
+        if (!video) return;
+        const bar = document.querySelector(".ytp-progress-bar, .ytp-progress-bar-container");
+        if (!bar) return;
 
-      let layer = document.getElementById("lt-scrubber-heatmap");
-      if (!layer) {
-        layer = document.createElement("div");
-        layer.id = "lt-scrubber-heatmap";
-        layer.style.cssText = "position:absolute; top:0; left:0; width:100%; height:100%; pointer-events:none; z-index:45;";
-        bar.appendChild(layer);
+        let layer = document.getElementById("lt-scrubber-heatmap");
+        if (!layer) {
+          layer = document.createElement("div");
+          layer.id = "lt-scrubber-heatmap";
+          layer.style.cssText = "position:absolute; top:0; left:0; width:100%; height:100%; pointer-events:none; z-index:45;";
+          bar.appendChild(layer);
+        }
+        layer.innerHTML = "";
+
+        const duration = video.duration || 1;
+        cards.forEach((c, idx) => {
+          if (!c.seconds && c.seconds !== 0) return;
+          const pct = Math.min(100, Math.max(0, (c.seconds / duration) * 100));
+          const v = (c.verdict || "VERIFIED").toUpperCase();
+          const color = v === "FALSE" ? "#EF4444" : (v === "MISLEADING" ? "#F59E0B" : "#10B981");
+
+          const marker = document.createElement("div");
+          marker.className = `lt-scrubber-tick ${v}`;
+          marker.style.cssText = `position:absolute; left:${pct}%; top:-3px; width:4px; height:12px; background:${color}; border-radius:2px; pointer-events:auto; cursor:pointer; box-shadow:0 0 6px ${color}; transition:transform 0.15s ease;`;
+          marker.title = `[${v}] ${c.timestamp || '00:00'} - ${c.quote}`;
+
+          marker.addEventListener("mouseenter", () => {
+            marker.style.transform = "scaleY(1.7) scaleX(1.5)";
+          });
+          marker.addEventListener("mouseleave", () => {
+            marker.style.transform = "scale(1)";
+          });
+          marker.addEventListener("click", (e) => {
+            e.stopPropagation();
+            video.currentTime = c.seconds;
+            video.play();
+            showToast(`▶ Jumped to [${c.timestamp}]: ${c.verdict}`);
+            const cardEl = document.getElementById(`card-${idx}`);
+            if (cardEl) {
+              cardEl.scrollIntoView({ behavior: "smooth", block: "center" });
+              cardEl.style.boxShadow = `0 0 16px ${color}`;
+              setTimeout(() => { cardEl.style.boxShadow = ""; }, 1800);
+            }
+          });
+
+          layer.appendChild(marker);
+        });
+      } catch (e) {
+        console.warn("[LiveTruth] Scrubber heatmap error:", e);
       }
-      layer.innerHTML = "";
+    }
 
-      const duration = video.duration || 1;
-      cards.forEach((c, idx) => {
-        if (!c.seconds && c.seconds !== 0) return;
-        const pct = Math.min(100, Math.max(0, (c.seconds / duration) * 100));
-        const v = (c.verdict || "VERIFIED").toUpperCase();
-        const color = v === "FALSE" ? "#EF4444" : (v === "MISLEADING" ? "#F59E0B" : "#10B981");
+    function renderCards(cards, score, intel, modelName) {
 
-        const marker = document.createElement("div");
-        marker.className = `lt-scrubber-tick ${v}`;
-        marker.style.cssText = `position:absolute; left:${pct}%; top:-3px; width:4px; height:12px; background:${color}; border-radius:2px; pointer-events:auto; cursor:pointer; box-shadow:0 0 6px ${color}; transition:transform 0.15s ease;`;
-        marker.title = `[${v}] ${c.timestamp || '00:00'} - ${c.quote}`;
+      // Sanitize: filter out any bogus cards with quote "N/A" or "System Error"
 
-        marker.addEventListener("mouseenter", () => {
-          marker.style.transform = "scaleY(1.7) scaleX(1.5)";
-        });
-        marker.addEventListener("mouseleave", () => {
-          marker.style.transform = "scale(1)";
-        });
-        marker.addEventListener("click", (e) => {
-          e.stopPropagation();
-          video.currentTime = c.seconds;
-          video.play();
-          showToast(`▶ Jumped to [${c.timestamp}]: ${c.verdict}`);
-          const cardEl = document.getElementById(`card-${idx}`);
-          if (cardEl) {
-            cardEl.scrollIntoView({ behavior: "smooth", block: "center" });
-            cardEl.style.boxShadow = `0 0 16px ${color}`;
-            setTimeout(() => { cardEl.style.boxShadow = ""; }, 1800);
-          }
-        });
+      const validCards = (cards || []).filter(c => {
 
-        layer.appendChild(marker);
+        const q = (c.quote || "").trim().toUpperCase();
+
+        const s = (c.source || "").toLowerCase();
+
+        const exp = (c.explanation || "").toLowerCase();
+
+        return q !== "N/A" && q !== "NONE" && q !== "NULL" && q !== "" && !s.includes("system error") && !exp.includes("malformed");
+
       });
-    } catch (e) {
-      console.warn("[LiveTruth] Scrubber heatmap error:", e);
-    }
-  }
-
-  function renderCards(cards, score, intel, modelName) {
-
-    // Sanitize: filter out any bogus cards with quote "N/A" or "System Error"
-
-    const validCards = (cards || []).filter(c => {
-
-      const q = (c.quote || "").trim().toUpperCase();
-
-      const s = (c.source || "").toLowerCase();
-
-      const exp = (c.explanation || "").toLowerCase();
-
-      return q !== "N/A" && q !== "NONE" && q !== "NULL" && q !== "" && !s.includes("system error") && !exp.includes("malformed");
-
-    });
 
 
 
-    if (validCards.length === 0) {
+      if (validCards.length === 0) {
 
-      renderEmptyState(intel || "No verifiable claims found in this video.");
+        renderEmptyState(intel || "No verifiable claims found in this video.");
 
-      return;
-
-    }
-
-
-
-    // Sort cards chronologically across video timeline
-
-    validCards.sort((a, b) => (a.seconds || 0) - (b.seconds || 0));
-
-
-
-    score = score || 0;
-
-    currentScore = score;
-
-    currentCards = validCards;
-
-    currentActiveIndex = -1;
-
-    const feed = document.getElementById("lt-feed");
-
-    const scoreVal = document.getElementById("lt-score-val");
-
-    const scoreBar = document.getElementById("lt-score-bar");
-
-    const titleEl = document.getElementById("lt-video-title");
-
-    const summaryEl = document.getElementById("lt-video-summary");
-
-    const trackEl = document.getElementById("lt-timeline-track");
-
-    const verdictSummary = document.getElementById("lt-verdict-summary");
-
-    const statusBadge = document.getElementById("lt-status-badge");
-
-
-
-    // Dynamic Video Title & Source Channel
-
-    const videoInfo = getCleanVideoInfo();
-
-    if (titleEl) {
-
-      if (videoInfo.channel && videoInfo.channel.toLowerCase() !== "youtube") {
-
-        titleEl.innerHTML = `<span style="color:#60A5FA; font-weight:600;">${videoInfo.channel}</span> <span style="color:var(--lt-text-dim);">•</span> ${videoInfo.title}`;
-
-      } else {
-
-        titleEl.innerText = videoInfo.title;
+        return;
 
       }
 
-      titleEl.title = `${videoInfo.channel ? videoInfo.channel + ' - ' : ''}${videoInfo.title}`;
-
-    }
 
 
+      // Sort cards chronologically across video timeline
 
-    // Populate Audited Sources Box
-
-    const sourcesBox = document.getElementById("lt-sources-box");
-
-    const sourcesList = document.getElementById("lt-sources-list");
-
-    const sourcesCountText = document.getElementById("lt-sources-count-text");
+      validCards.sort((a, b) => (a.seconds || 0) - (b.seconds || 0));
 
 
 
-    const uniqueSources = [];
+      score = score || 0;
 
-    const seen = new Set();
+      currentScore = score;
 
-    validCards.forEach(c => {
+      currentCards = validCards;
 
-      const s = (c.source || "").trim();
+      currentActiveIndex = -1;
 
-      if (s && !seen.has(s.toLowerCase())) {
+      const feed = document.getElementById("lt-feed");
 
-        seen.add(s.toLowerCase());
+      const scoreVal = document.getElementById("lt-score-val");
 
-        uniqueSources.push({
+      const scoreBar = document.getElementById("lt-score-bar");
 
-          name: s,
+      const titleEl = document.getElementById("lt-video-title");
 
-          origin: c.dataOrigin || "Authoritative Database",
+      const summaryEl = document.getElementById("lt-video-summary");
 
-          url: c.sourceUrl || `https://www.google.com/search?q=${encodeURIComponent(s + ' ' + (c.researchPaper || c.quote || ''))}`
+      const trackEl = document.getElementById("lt-timeline-track");
 
-        });
+      const verdictSummary = document.getElementById("lt-verdict-summary");
+
+      const statusBadge = document.getElementById("lt-status-badge");
+
+
+
+      // Dynamic Video Title & Source Channel
+
+      const videoInfo = getCleanVideoInfo();
+
+      if (titleEl) {
+
+        if (videoInfo.channel && videoInfo.channel.toLowerCase() !== "youtube") {
+
+          titleEl.innerHTML = `<span style="color:#60A5FA; font-weight:600;">${videoInfo.channel}</span> <span style="color:var(--lt-text-dim);">•</span> ${videoInfo.title}`;
+
+        } else {
+
+          titleEl.innerText = videoInfo.title;
+
+        }
+
+        titleEl.title = `${videoInfo.channel ? videoInfo.channel + ' - ' : ''}${videoInfo.title}`;
 
       }
 
-    });
+
+
+      // Populate Audited Sources Box
+
+      const sourcesBox = document.getElementById("lt-sources-box");
+
+      const sourcesList = document.getElementById("lt-sources-list");
+
+      const sourcesCountText = document.getElementById("lt-sources-count-text");
 
 
 
-    if (sourcesBox && sourcesList && uniqueSources.length > 0) {
+      const uniqueSources = [];
 
-      sourcesBox.style.display = "block";
+      const seen = new Set();
 
-      if (sourcesCountText) {
+      validCards.forEach(c => {
 
-        sourcesCountText.innerText = `Audited Sources & Citations (${uniqueSources.length})`;
+        const s = (c.source || "").trim();
 
-      }
+        if (s && !seen.has(s.toLowerCase())) {
 
-      sourcesList.innerHTML = uniqueSources.map(s => `
+          seen.add(s.toLowerCase());
+
+          uniqueSources.push({
+
+            name: s,
+
+            origin: c.dataOrigin || "Authoritative Database",
+
+            url: c.sourceUrl || `https://www.google.com/search?q=${encodeURIComponent(s + ' ' + (c.researchPaper || c.quote || ''))}`
+
+          });
+
+        }
+
+      });
+
+
+
+      if (sourcesBox && sourcesList && uniqueSources.length > 0) {
+
+        sourcesBox.style.display = "block";
+
+        if (sourcesCountText) {
+
+          sourcesCountText.innerText = `Audited Sources & Citations (${uniqueSources.length})`;
+
+        }
+
+        sourcesList.innerHTML = uniqueSources.map(s => `
 
         <a href="${s.url}" target="_blank" rel="noopener noreferrer" class="lt-source-item" title="Open source: ${s.name}">
 
@@ -1742,53 +1870,53 @@
 
       `).join("");
 
-    }
+      }
 
 
 
-    let falseCount = 0, verifiedCount = 0, misleadingCount = 0;
+      let falseCount = 0, verifiedCount = 0, misleadingCount = 0;
 
-    validCards.forEach(c => {
-
-      const v = (c.verdict || "VERIFIED").toUpperCase();
-
-      if (v === "FALSE") falseCount++;
-
-      else if (v === "VERIFIED" || v === "TRUE") verifiedCount++;
-
-      else misleadingCount++;
-
-    });
-
-
-
-    if (statusBadge) statusBadge.innerText = "Audited";
-    const intelTag = document.getElementById("lt-intel-tag");
-    if (intelTag) {
-      intelTag.innerText = modelName ? "⚡ " + modelName : "Gemini 3.8 High Intel";
-    }
-
-    if (scoreVal) scoreVal.innerText = `${score}%`;
-
-    if (scoreBar) scoreBar.style.width = `${score}%`;
-
-
-
-    if (summaryEl) {
-
-      summaryEl.innerText = intel || "Video claims audited successfully.";
-
-    }
-
-
-
-    if (trackEl) {
-
-      trackEl.innerHTML = validCards.map((c, idx) => {
+      validCards.forEach(c => {
 
         const v = (c.verdict || "VERIFIED").toUpperCase();
 
-        return `
+        if (v === "FALSE") falseCount++;
+
+        else if (v === "VERIFIED" || v === "TRUE") verifiedCount++;
+
+        else misleadingCount++;
+
+      });
+
+
+
+      if (statusBadge) statusBadge.innerText = "Audited";
+      const intelTag = document.getElementById("lt-intel-tag");
+      if (intelTag) {
+        intelTag.innerText = modelName ? "⚡ " + modelName : "Gemini 3.8 High Intel";
+      }
+
+      if (scoreVal) scoreVal.innerText = `${score}%`;
+
+      if (scoreBar) scoreBar.style.width = `${score}%`;
+
+
+
+      if (summaryEl) {
+
+        summaryEl.innerText = intel || "Video claims audited successfully.";
+
+      }
+
+
+
+      if (trackEl) {
+
+        trackEl.innerHTML = validCards.map((c, idx) => {
+
+          const v = (c.verdict || "VERIFIED").toUpperCase();
+
+          return `
 
           <button class="lt-timeline-pin ${v}" data-seconds="${c.seconds}" data-card="card-${idx}" title="${c.timestamp}: ${c.quote}">
 
@@ -1798,15 +1926,15 @@
 
         `;
 
-      }).join("");
+        }).join("");
 
-    }
+      }
 
 
 
-    if (verdictSummary) {
+      if (verdictSummary) {
 
-      verdictSummary.innerHTML = `
+        verdictSummary.innerHTML = `
 
         <span style="color:#F87171; font-family:var(--lt-mono); font-size:10px;">${falseCount} FALSE</span>
 
@@ -1816,20 +1944,20 @@
 
       `;
 
-    }
+      }
 
 
 
-    if (feed) {
+      if (feed) {
 
-      injectYouTubeScrubberHeatmap(validCards);
-      feed.innerHTML = validCards.map((c, idx) => {
+        injectYouTubeScrubberHeatmap(validCards);
+        feed.innerHTML = validCards.map((c, idx) => {
 
-        const v = (c.verdict || "VERIFIED").toUpperCase();
+          const v = (c.verdict || "VERIFIED").toUpperCase();
 
-        const sourceUrl = c.sourceUrl || `https://www.google.com/search?q=${encodeURIComponent(c.source + ' ' + (c.researchPaper || c.quote || ''))}`;
+          const sourceUrl = c.sourceUrl || `https://www.google.com/search?q=${encodeURIComponent(c.source + ' ' + (c.researchPaper || c.quote || ''))}`;
 
-        return `
+          return `
 
           <div id="card-${idx}" class="lt-card ${v}">
 
@@ -1898,61 +2026,61 @@
 
         `;
 
-      }).join("");
+        }).join("");
+
+      }
 
     }
 
-  }
+
+
+    let domCheckTimeout = null;
+
+    const observer = new MutationObserver(() => {
+
+      if (domCheckTimeout) return;
+
+      domCheckTimeout = setTimeout(() => {
+
+        domCheckTimeout = null;
+
+        setupExtension();
+
+        attachUniversalVideoSync();
+
+      }, 400);
+
+    });
 
 
 
-  let domCheckTimeout = null;
+    observer.observe(document.body || document.documentElement, { childList: true, subtree: true });
 
-  const observer = new MutationObserver(() => {
 
-    if (domCheckTimeout) return;
 
-    domCheckTimeout = setTimeout(() => {
-
-      domCheckTimeout = null;
+    window.addEventListener("yt-navigate-finish", () => {
 
       setupExtension();
 
-      attachUniversalVideoSync();
+      checkPlaybackStateChange();
 
-    }, 400);
+    });
 
-  });
+    window.addEventListener("yt-page-data-updated", () => {
 
+      setupExtension();
 
+      checkPlaybackStateChange();
 
-  observer.observe(document.body || document.documentElement, { childList: true, subtree: true });
+    });
 
+    window.addEventListener("popstate", () => {
 
+      checkPlaybackStateChange();
 
-  window.addEventListener("yt-navigate-finish", () => {
+    });
 
-    setupExtension();
+    window.addEventListener("load", setupExtension);
 
-    checkPlaybackStateChange();
-
-  });
-
-  window.addEventListener("yt-page-data-updated", () => {
-
-    setupExtension();
-
-    checkPlaybackStateChange();
-
-  });
-
-  window.addEventListener("popstate", () => {
-
-    checkPlaybackStateChange();
-
-  });
-
-  window.addEventListener("load", setupExtension);
-
-})();
+  }) ();
 
