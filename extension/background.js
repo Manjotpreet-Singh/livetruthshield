@@ -48,7 +48,11 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       body: JSON.stringify({
         reelUrl: reelUrl,
         title: request.title || "",
-        caption: request.caption || ""
+        caption: request.caption || "",
+        author: request.author || "",
+        videoSrc: request.videoSrc || "",
+        audioTrack: request.audioTrack || "",
+        shortcode: request.shortcode || ""
       })
     })
       .then(data => sendResponse({ success: true, data: data }))

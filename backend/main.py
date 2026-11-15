@@ -52,6 +52,10 @@ from youtube_transcript_api import YouTubeTranscriptApi
 
 from dotenv import load_dotenv
 import httpx
+try:
+    import transcriber
+except Exception as _tr_err:
+    transcriber = None
 
 dotenv_path = os.path.join(os.path.dirname(__file__), ".env")
 load_dotenv(dotenv_path)
@@ -2902,68 +2906,99 @@ async def instagram_reel(request: Request):
         data = {}
 
     reel_url = data.get("reelUrl") or data.get("url") or ""
-    custom_title = data.get("title", "")
-    caption = data.get("caption", "")
+    custom_title = (data.get("title") or "").strip()
+    caption = (data.get("caption") or "").strip()
+    author = (data.get("author") or "").strip()
+    video_src = (data.get("videoSrc") or "").strip()
+    audio_track = (data.get("audioTrack") or "").strip()
 
     # Extract shortcode from Instagram reel URL
-    # Example: https://www.instagram.com/reel/DjDxYZab9/ or https://www.instagram.com/reels/DjDxYZab9/
-    shortcode = ""
-    if "reel/" in reel_url or "reels/" in reel_url:
+    shortcode = data.get("shortcode") or ""
+    if not shortcode and ("reel/" in reel_url or "reels/" in reel_url):
         parts = reel_url.split("reel/")[1] if "reel/" in reel_url else reel_url.split("reels/")[1]
         shortcode = parts.split("?")[0].split("/")[0].split("&")[0]
 
-    title = custom_title or (f"Instagram Reel {shortcode}" if shortcode else "Instagram Reel")
-    desc = caption or ""
-
-    # Fetch public reel page to extract OpenGraph metadata if not provided by DOM
-    if shortcode and (not desc or not custom_title or custom_title.lower() == "instagram reel"):
-        try:
-            client = ai_engine.get_http_client()
-            headers = {
-                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-                "Accept-Language": "en-US,en;q=0.9"
-            }
-            resp = await client.get(f"https://www.instagram.com/reel/{shortcode}/", headers=headers, timeout=10.0)
-            if resp.status_code == 200:
-                html = resp.text
-                og_title = re.search(r'property="og:title"\s+content="([^"]+)"', html) or re.search(r'content="([^"]+)"\s+property="og:title"', html)
-                og_desc = re.search(r'property="og:description"\s+content="([^"]+)"', html) or re.search(r'content="([^"]+)"\s+property="og:description"', html)
-                if og_title and not custom_title:
-                    title = og_title.group(1).replace(" • Instagram photos and videos", "").replace(" • Instagram", "")
-                if og_desc and not desc:
-                    desc = og_desc.group(1)
-        except Exception as e:
-            print(f"[!] IG Reel scrape fallback notice: {e}")
-
-    # Build unique ID & check cache first (0ms instant re-visits)
     video_id = f"ig_{shortcode}" if shortcode else ("ig_" + hashlib.md5(reel_url.encode()).hexdigest()[:10])
+
+    # Check cache first (ignore if it contains stale company trivia about Instagram platform)
     if video_id in VERIFICATION_CACHE:
         cached = VERIFICATION_CACHE[video_id]
-        # Invalidate old stale trivia cache (e.g. facts about Instagram company rather than the reel)
         cards = cached.get("cards", []) if isinstance(cached, dict) else []
-        is_stale_trivia = any("instagram" in str(c.get("quote", "")).lower() and ("algorithm" in str(c.get("quote", "")).lower() or "launched reels" in str(c.get("quote", "")).lower()) for c in cards)
-        if not is_stale_trivia and cards:
+        is_stale_trivia = any("instagram" in str(c.get("quote", "")).lower() and ("kevin systrom" in str(c.get("quote", "")).lower() or "acquired by facebook" in str(c.get("quote", "")).lower() or "launched reels" in str(c.get("quote", "")).lower() or "stories" in str(c.get("quote", "")).lower()) for c in cards)
+        if not is_stale_trivia and cards and len(cards) > 0:
             print(f"[CACHE HIT] Instagram Reel {video_id}")
             return cached
         else:
-            print(f"[*] Evicted stale company trivia cache for {video_id}")
+            print(f"[*] Evicted stale trivia cache for {video_id}")
             VERIFICATION_CACHE.pop(video_id, None)
 
-    reel_content = f"Title: {title}\nCaption & Claims: {desc}".strip()
+    # Optional speech-to-text if audio transcript can be fetched and caption is brief
+    spoken_dialogue = ""
+    if transcriber and (video_src or (reel_url and not caption)):
+        try:
+            target_media = video_src if (video_src and video_src.startswith("http")) else reel_url
+            if target_media:
+                print(f"[*] Checking speech transcription for Instagram Reel {video_id}...")
+                tr_res = await asyncio.wait_for(transcriber.get_transcript(source_url=target_media), timeout=12.0)
+                if tr_res and tr_res.get("segments"):
+                    segs = tr_res["segments"]
+                    spoken_dialogue = " ".join(s[1] for s in segs if len(s) > 1 and s[1])
+                    print(f"[+] Transcribed {len(segs)} spoken segments from Instagram Reel.")
+        except Exception as te:
+            print(f"[!] IG transcription fallback note: {te}")
 
-    # Run Live AI fact-checking engine (Groq Turbo / DeepSeek / Gemini)
+    # Build structured reel content
+    content_blocks = []
+    if author:
+        content_blocks.append(f"Content Creator / Author: {author}")
+    if audio_track:
+        content_blocks.append(f"Audio Track: {audio_track}")
+    if custom_title and not custom_title.lower().startswith("instagram reel") and custom_title.lower() != "instagram":
+        content_blocks.append(f"Post Header: {custom_title}")
+    if caption:
+        content_blocks.append(f"Reel Caption & On-Screen Assertions:\n{caption}")
+    if spoken_dialogue:
+        content_blocks.append(f"Spoken Dialogue (Audio Transcript):\n{spoken_dialogue}")
+
+    # If completely empty, NEVER fabricate facts about the company Instagram
+    if not caption and not spoken_dialogue and (not custom_title or custom_title.lower() in ["instagram", "instagram reel", ""]):
+        return {
+            "score": 0,
+            "intel": "No readable captions or spoken dialogue could be extracted from this Instagram Reel. Please ensure the reel is playing with sound and click '⚡ Audit Reel Now'.",
+            "cards": [],
+            "source": "Instagram",
+            "video_id": video_id
+        }
+
+    reel_content = "\n\n".join(content_blocks)
+    audit_title = custom_title or (f"Instagram Reel by {author}" if author else f"Instagram Reel {shortcode}")
+
+    mode = "transcript" if spoken_dialogue else "topic"
+
+    reel_prompt_text = (
+        f"INSTAGRAM REEL AUDIT\n"
+        f"Creator / Channel: {author or 'Instagram Creator'}\n"
+        f"Reel URL: {reel_url}\n\n"
+        f"VERIFIABLE STATEMENTS & CONTENT FROM THIS REEL:\n"
+        f"{reel_content}\n\n"
+        f"MANDATORY INSTRUCTIONS:\n"
+        f"1. You MUST fact-check the actual statements, claims, health/financial/political advice, and facts asserted in this specific reel.\n"
+        f"2. Do NOT audit the platform Instagram, Kevin Systrom, or Meta. Audit ONLY the creator's spoken words and caption claims.\n"
+        f"3. Return 3 to 6 high-accuracy claim cards with empirical refutations or confirmations."
+    )
+
     try:
         parsed, used_model = await ai_engine.audit_claims(
-            text_chunk=reel_content,
-            title=title,
+            text_chunk=reel_prompt_text,
+            title=audit_title,
             video_id=video_id,
-            mode="topic"
+            mode=mode
         )
     except Exception as err:
         return error_payload(f"Live AI verification failed for Instagram Reel: {err}")
 
     parsed["source"] = "Instagram"
-    parsed["intel"] = f"Instagram Reel Analysis: {parsed.get('intel', '')}"
+    parsed["intel"] = f"Instagram Reel ({author or 'Audited Reel'}): {parsed.get('intel', '')}"
     parsed["video_id"] = video_id
     VERIFICATION_CACHE[video_id] = parsed
     save_cache_to_disk()

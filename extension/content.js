@@ -408,40 +408,148 @@
   function isInstagramReelPage() {
     if (!window.location.hostname.includes("instagram.com")) return false;
     const p = window.location.pathname;
-    return p.startsWith("/reel/") || p.startsWith("/reels/") || p.match(/^\/reel\//);
+    return p.includes("/reel/") || p.includes("/reels/") || p.startsWith("/reels") || (document.querySelector("video") !== null);
+  }
+
+  function getActiveInstagramReel() {
+    const videos = Array.from(document.querySelectorAll("video"));
+    if (!videos.length) return { video: null, container: null, shortcode: "" };
+
+    // 1. Prioritize playing / unpaused video
+    let activeVideo = videos.find(v => !v.paused && v.currentTime > 0);
+
+    // 2. Fallback to video closest to vertical center of viewport
+    if (!activeVideo) {
+      const vhCenter = window.innerHeight / 2;
+      let minDistance = Infinity;
+      for (const v of videos) {
+        const rect = v.getBoundingClientRect();
+        if (rect.height > 100 && rect.width > 100) {
+          const vCenter = rect.top + rect.height / 2;
+          const dist = Math.abs(vCenter - vhCenter);
+          if (dist < minDistance) {
+            minDistance = dist;
+            activeVideo = v;
+          }
+        }
+      }
+    }
+
+    if (!activeVideo) activeVideo = videos[0];
+
+    const container = activeVideo ? (
+      activeVideo.closest("article") ||
+      activeVideo.closest("div[role='dialog']") ||
+      activeVideo.closest("div[class*='x1lliihq']") ||
+      activeVideo.parentElement?.parentElement?.parentElement ||
+      document.body
+    ) : document.body;
+
+    let shortcode = "";
+    const m = window.location.pathname.match(/\/reels?\/([A-Za-z0-9_-]+)/);
+    if (m) {
+      shortcode = m[1];
+    } else if (container) {
+      const link = container.querySelector("a[href*='/reel/'], a[href*='/p/']");
+      if (link) {
+        const lm = link.getAttribute("href").match(/\/(?:reel|p)\/([A-Za-z0-9_-]+)/);
+        if (lm) shortcode = lm[1];
+      }
+    }
+
+    return { video: activeVideo, container, shortcode };
   }
 
   function getInstagramReelInfo() {
+    const { video, container, shortcode } = getActiveInstagramReel();
     let title = "";
     let caption = "";
+    let author = "";
+    let audioTrack = "";
+    let videoSrc = "";
+
     try {
-      const captionSelectors = [
-        "h1._aacl",
-        "article h1",
-        "article [role='button'] span",
-        "span._aacl._aaco._aacu._aacx._aad7._aade",
-        "div[data-testid='post-comment-root'] span",
-        "div[class*='caption']",
-        "article span"
-      ];
-      for (const sel of captionSelectors) {
-        const el = document.querySelector(sel);
-        if (el && el.innerText && el.innerText.trim().length > 3) {
-          caption = el.innerText.trim();
-          break;
+      if (video) {
+        videoSrc = video.currentSrc || video.src || "";
+      }
+
+      if (container) {
+        // A. Author / Creator Handle
+        const authorEl = container.querySelector("header a, a[role='link'][tabindex='0'], a[href*='/'][role='link']");
+        if (authorEl) {
+          const rawH = (authorEl.getAttribute("href") || "").replace(/^\//, "").split("/")[0].split("?")[0];
+          if (rawH && !["reels", "reel", "explore", "p", "stories", "direct"].includes(rawH.toLowerCase())) {
+            author = `@${rawH}`;
+          } else if (authorEl.innerText && !authorEl.innerText.includes(" ") && authorEl.innerText.length < 35) {
+            author = `@${authorEl.innerText.trim().replace(/^@/, '')}`;
+          }
+        }
+
+        // B. Automatically click "... more" / "more" button if Instagram hid caption
+        const expandBtns = container.querySelectorAll("div[role='button'], span[role='button']");
+        for (const btn of expandBtns) {
+          const txt = (btn.innerText || "").toLowerCase().trim();
+          if (txt === "more" || txt === "... more" || txt.includes("… more")) {
+            try { btn.click(); } catch(e) {}
+            break;
+          }
+        }
+
+        // C. Multi-element Caption Extraction
+        const textPieces = [];
+        const captionEls = container.querySelectorAll("h1, div[class*='_a9zs'], div[class*='caption'], span[dir='auto'], div[dir='auto']");
+        captionEls.forEach(el => {
+          const t = el.innerText ? el.innerText.trim() : "";
+          if (t.length > 8 &&
+              !t.includes("likes") &&
+              !t.includes("comments") &&
+              !t.includes("Audio unavailable") &&
+              !t.includes("Original audio") &&
+              !t.match(/^(?:view|reply|share|send|save|follow|more|view all.*)$/i)) {
+            if (!textPieces.some(p => p.includes(t) || t.includes(p))) {
+              textPieces.push(t);
+            }
+          }
+        });
+
+        if (textPieces.length) {
+          caption = textPieces.join("\n\n");
+        }
+
+        // D. Audio track info
+        const audioEl = container.querySelector("a[href*='/audio/'] span, div[class*='audio'] span");
+        if (audioEl && audioEl.innerText) {
+          audioTrack = audioEl.innerText.trim();
         }
       }
-      const ogDesc = document.querySelector('meta[property="og:description"], meta[name="description"]');
-      if (ogDesc && ogDesc.content) {
-        if (!caption) caption = ogDesc.content.trim();
+
+      // E. OpenGraph Fallback
+      if (!caption) {
+        const ogDesc = document.querySelector('meta[property="og:description"], meta[name="description"]');
+        if (ogDesc && ogDesc.content) {
+          const c = ogDesc.content.trim();
+          if (!c.toLowerCase().includes("photos and videos")) {
+            caption = c;
+          }
+        }
       }
-      const ogTitle = document.querySelector('meta[property="og:title"]');
-      if (ogTitle && ogTitle.content) title = ogTitle.content.trim();
-      if (!title) {
-        title = document.title.replace(/\s*•\s*Instagram.*$/i, "").trim() || "Instagram Reel";
+
+      // Format clean user-facing title
+      if (author && caption) {
+        const cleanSnippet = caption.replace(/[\r\n\t]+/g, " ").slice(0, 75);
+        title = `${author}: "${cleanSnippet}${caption.length > 75 ? '…' : ''}"`;
+      } else if (author) {
+        title = `Instagram Reel by ${author}`;
+      } else {
+        const docT = document.title.replace(/\s*•\s*Instagram.*$/i, "").trim();
+        title = (docT && !["instagram", "reels"].includes(docT.toLowerCase())) ? docT : `Instagram Reel ${shortcode || ''}`;
       }
-    } catch (e) { }
-    return { title, caption };
+
+    } catch (e) {
+      console.warn("[LiveTruth] IG Reel extraction notice:", e);
+    }
+
+    return { title, caption, author, audioTrack, videoSrc, shortcode };
   }
 
   function showInstagramResults(data) {
@@ -458,18 +566,51 @@
     if (!isInstagramReelPage()) return;
     const statusPill = document.getElementById("lt-pill-status");
     if (statusPill) statusPill.innerText = "AUDITING...";
+
+    const feed = document.getElementById("lt-feed");
+    const titleEl = document.getElementById("lt-video-title");
+    const summaryEl = document.getElementById("lt-video-summary");
+    const statusBadge = document.getElementById("lt-status-badge");
+
     const info = getInstagramReelInfo();
+    const cleanReelTitle = info.title || "Instagram Reel";
+
+    if (titleEl) {
+      titleEl.innerHTML = `<span style="background:linear-gradient(135deg, #f093fb, #f5576c); -webkit-background-clip:text; -webkit-text-fill-color:transparent; font-weight:700;">Instagram Reel</span> <span style="color:var(--lt-text-dim);">•</span> ${info.author || 'Audited Reel'}`;
+    }
+    if (summaryEl) summaryEl.innerText = "Extracting reel assertions & verifying claims with Groq Turbo / Gemini...";
+    if (statusBadge) statusBadge.innerText = "Auditing...";
+
+    if (feed) {
+      feed.innerHTML = `
+        <div style="margin-bottom: 12px; font-size: 11px; color: var(--lt-accent-hover); display: flex; align-items: center; gap: 6px;">
+          <span style="display:inline-block; width:6px; height:6px; background:#EC4899; border-radius:50%;"></span>
+          Cross-referencing reel claims against authoritative records & verified science...
+        </div>
+        <div class="lt-skeleton-card"><div class="lt-skeleton-pill"></div><div class="lt-skeleton-line"></div><div class="lt-skeleton-line short"></div></div>
+        <div class="lt-skeleton-card"><div class="lt-skeleton-pill"></div><div class="lt-skeleton-line"></div><div class="lt-skeleton-line short"></div></div>
+      `;
+    }
+
+    const reelUrl = (info.shortcode ? `https://www.instagram.com/reel/${info.shortcode}/` : window.location.href);
+
     safeSendMessage({
       action: "checkInstagramReel",
-      reelUrl: window.location.href,
-      title: info.title,
-      caption: info.caption
+      reelUrl: reelUrl,
+      title: cleanReelTitle,
+      caption: info.caption,
+      author: info.author,
+      videoSrc: info.videoSrc,
+      audioTrack: info.audioTrack,
+      shortcode: info.shortcode
     }, (resp) => {
       if (statusPill) statusPill.innerText = "READY";
       if (resp && resp.success && resp.data) {
         showInstagramResults(resp.data);
       } else if (resp && resp.error) {
         renderEmptyState(resp.error);
+      } else {
+        renderEmptyState("LiveTruth backend unreachable. Please ensure Run_LiveTruth_Shield.bat is running.");
       }
     });
   }
