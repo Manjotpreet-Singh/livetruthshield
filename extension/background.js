@@ -13,9 +13,20 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === "checkVideo") {
     const videoId = request.videoId;
     const title = request.title || "";
-    const path = `/api/check?v=${encodeURIComponent(videoId)}&title=${encodeURIComponent(title)}&channel=${encodeURIComponent(request.channel || "")}`;
+    const hasCaptions = Array.isArray(request.captions) && request.captions.length > 0;
+    const path = hasCaptions ? "/api/check" : `/api/check?v=${encodeURIComponent(videoId)}&title=${encodeURIComponent(title)}&channel=${encodeURIComponent(request.channel || "")}`;
+    const options = hasCaptions ? {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        v: videoId,
+        title: title,
+        channel: request.channel || "",
+        captions: request.captions
+      })
+    } : {};
 
-    fetchWithFallback(path)
+    fetchWithFallback(path, options)
       .then(data => sendResponse({ success: true, data: data }))
       .catch(err => {
         console.warn("[LiveTruth] Backend unreachable on port 5000:", err.message);
@@ -79,6 +90,20 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     fetchWithFallback(path)
       .then(data => sendResponse({ success: true, data: data }))
       .catch(err => {
+        sendResponse({ success: false, error: err.message });
+      });
+    return true;
+  }
+
+  if (request.action === "translateContent") {
+    fetchWithFallback("/api/translate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(request.payload || {})
+    })
+      .then(data => sendResponse({ success: true, data: data }))
+      .catch(err => {
+        console.warn("[LiveTruth] Translation API error:", err.message);
         sendResponse({ success: false, error: err.message });
       });
     return true;

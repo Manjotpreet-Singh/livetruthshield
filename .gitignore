@@ -28,3 +28,8 @@ livetruth-shield/
 *.pptx
 *.pdf
 
+# Binaries & Executables
+*.exe
+*.dll
+
+

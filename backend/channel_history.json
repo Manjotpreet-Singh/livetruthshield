@@ -1,0 +1,72 @@
+{
+  "Raj Shamani": {
+    "channel": "Raj Shamani",
+    "videos": {
+      "J2GKwMI_J_I": {
+        "title": "Communication Masterclass: How To Speak Confidently & Win People | Vinh Giang | FO588 Raj Shamani",
+        "score": 62,
+        "claims": 14,
+        "false": 0,
+        "misleading": 1,
+        "verified": 11,
+        "exaggeration": 2,
+        "audited_at": 1794679908
+      },
+      "BgeNDG5jD60": {
+        "title": "Why Your Communication Makes People Ignore You &  How To Fix It | Vinh Giang | FO588 Raj Shamani",
+        "score": 95,
+        "claims": 6,
+        "false": 0,
+        "misleading": 0,
+        "verified": 5,
+        "exaggeration": 1,
+        "audited_at": 1794680311
+      }
+    }
+  },
+  "MrBeast": {
+    "channel": "MrBeast",
+    "videos": {
+      "48h57PspBec": {
+        "title": "$1 vs $1,000,000,000 Yacht!",
+        "score": 81,
+        "claims": 5,
+        "false": 0,
+        "misleading": 1,
+        "verified": 3,
+        "exaggeration": 1,
+        "audited_at": 1794680749
+      }
+    }
+  },
+  "Casually Explained": {
+    "channel": "Casually Explained",
+    "videos": {
+      "uan3Aj0bHKc": {
+        "title": "YouTube",
+        "score": 81,
+        "claims": 5,
+        "false": 0,
+        "misleading": 1,
+        "verified": 3,
+        "exaggeration": 1,
+        "audited_at": 1794683651
+      }
+    }
+  },
+  "Dhruv Rathee": {
+    "channel": "Dhruv Rathee",
+    "videos": {
+      "V2fgXzoj0xg": {
+        "title": "YouTube",
+        "score": 94,
+        "claims": 5,
+        "false": 0,
+        "misleading": 0,
+        "verified": 4,
+        "exaggeration": 1,
+        "audited_at": 1794684538
+      }
+    }
+  }
+}

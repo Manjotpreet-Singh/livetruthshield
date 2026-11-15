@@ -6,3 +6,6 @@ google-genai>=0.1.1
 pydantic>=2.6.0
 python-dotenv>=1.0.1
 httpx>=0.27.0
+yt-dlp>=2024.8.6
+# Optional offline speech-to-text (heavy): faster-whisper
+streamlink>=6.7.0

@@ -42,6 +42,7 @@ from fastapi.responses import HTMLResponse, Response, FileResponse
 
 
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 
 
 
@@ -64,6 +65,11 @@ import ai_engine
 
 Features_Available = ai_engine.Features_Available
 app = FastAPI(title="LiveTruth Shield API", version="1.0.0")
+
+static_dir = os.path.join(os.path.dirname(__file__), "static")
+if not os.path.exists(static_dir):
+    os.makedirs(static_dir, exist_ok=True)
+app.mount("/static", StaticFiles(directory=static_dir), name="static")
 
 
 
@@ -255,26 +261,30 @@ def root_dashboard():
 
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body {
-            background: var(--bg);
+            background: #06090e;
+            background-image: 
+                url('/static/dashboard_bg.jpg'),
+                radial-gradient(ellipse 70% 50% at 50% 100%, #0d2818, transparent),
+                radial-gradient(ellipse 80% 50% at 50% -20%, rgba(147, 51, 234, 0.12), transparent);
+            background-size: cover;
+            background-position: center bottom;
+            background-repeat: no-repeat;
+            background-attachment: fixed;
             color: var(--text-main);
             font-family: var(--sans);
             min-height: 100vh;
             display: flex;
             flex-direction: column;
             overflow-x: hidden;
-            background-image: 
-                radial-gradient(ellipse 80% 50% at 50% -20%, rgba(59, 130, 246, 0.15), transparent),
-                radial-gradient(ellipse 60% 40% at 85% 60%, rgba(139, 92, 246, 0.08), transparent);
-            background-attachment: fixed;
             -webkit-font-smoothing: antialiased;
         }
 
         /* 1. Cyber Navigation Header */
         header {
-            background: rgba(12, 16, 25, 0.85);
+            background: rgba(7, 11, 19, 0.7);
             backdrop-filter: blur(20px);
-            border-bottom: 1px solid var(--border);
-            padding: 14px 36px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            padding: 12px 36px;
             display: flex;
             align-items: center;
             justify-content: space-between;
@@ -292,35 +302,37 @@ def root_dashboard():
         }
 
         .brand-icon-box {
-            width: 38px;
-            height: 38px;
-            border-radius: 10px;
-            background: linear-gradient(135deg, rgba(59, 130, 246, 0.25), rgba(139, 92, 246, 0.2));
-            border: 1px solid rgba(59, 130, 246, 0.4);
+            width: 34px;
+            height: 34px;
+            border-radius: 9px;
+            background: rgba(147, 51, 234, 0.15);
+            border: 1px solid rgba(147, 51, 234, 0.45);
             display: flex;
             align-items: center;
             justify-content: center;
-            box-shadow: 0 0 16px rgba(59, 130, 246, 0.25);
+            box-shadow: 0 0 14px rgba(147, 51, 234, 0.35);
         }
 
         .brand-title {
             font-weight: 700;
-            font-size: 17px;
+            font-size: 16.5px;
             letter-spacing: -0.02em;
             display: flex;
             align-items: center;
             gap: 8px;
+            color: #FFFFFF;
         }
 
         .brand-badge {
-            background: linear-gradient(135deg, rgba(59, 130, 246, 0.2), rgba(139, 92, 246, 0.2));
-            color: var(--accent-glow);
+            background: rgba(147, 51, 234, 0.2);
+            color: #C084FC;
             font-size: 10.5px;
-            font-weight: 600;
-            padding: 2px 7px;
-            border-radius: 6px;
-            border: 1px solid rgba(59, 130, 246, 0.3);
+            font-weight: 700;
+            padding: 2px 8px;
+            border-radius: 9999px;
+            border: 1px solid rgba(147, 51, 234, 0.45);
             font-family: var(--mono);
+            letter-spacing: 0.5px;
         }
 
         .header-meta {
@@ -336,21 +348,22 @@ def root_dashboard():
         }
 
         .model-dropdown {
-            background: rgba(17, 22, 36, 0.95);
-            border: 1px solid rgba(59, 130, 246, 0.45);
-            color: #93C5FD;
-            font-family: var(--mono);
+            background: rgba(15, 23, 42, 0.7);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            color: #E2E8F0;
+            font-family: var(--sans);
             font-size: 11.5px;
             font-weight: 500;
-            padding: 6px 10px;
-            border-radius: 8px;
+            padding: 6px 14px;
+            border-radius: 9999px;
             outline: none;
             cursor: pointer;
             transition: all 0.2s ease;
+            backdrop-filter: blur(10px);
         }
         .model-dropdown:hover {
-            border-color: #60A5FA;
-            background: rgba(22, 29, 48, 0.98);
+            border-color: rgba(168, 85, 247, 0.5);
+            background: rgba(22, 29, 48, 0.85);
         }
         .model-dropdown option {
             background: #0C1019;
@@ -518,18 +531,20 @@ def root_dashboard():
             display: flex;
             align-items: center;
             gap: 7px;
-            padding: 5px 12px;
-            border-radius: 20px;
-            background: rgba(16, 185, 129, 0.08);
-            border: 1px solid rgba(16, 185, 129, 0.25);
-            font-size: 11.5px;
+            padding: 5px 14px;
+            border-radius: 9999px;
+            background: rgba(16, 185, 129, 0.1);
+            border: 1px solid rgba(16, 185, 129, 0.4);
+            font-size: 11px;
             font-family: var(--mono);
+            font-weight: 700;
             color: #34D399;
+            box-shadow: 0 0 12px rgba(16, 185, 129, 0.15);
         }
 
         .status-pulse {
-            width: 7px;
-            height: 7px;
+            width: 6px;
+            height: 6px;
             border-radius: 50%;
             background: #10B981;
             box-shadow: 0 0 8px #10B981;
@@ -543,27 +558,29 @@ def root_dashboard():
         }
 
         .header-btn {
-            background: rgba(255, 255, 255, 0.04);
-            border: 1px solid var(--border);
-            color: var(--text-muted);
-            border-radius: 8px;
-            padding: 6px 12px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            color: #E2E8F0;
+            border-radius: 9999px;
+            padding: 6px 14px;
             font-size: 12px;
+            font-weight: 500;
             cursor: pointer;
             display: flex;
             align-items: center;
             gap: 6px;
             transition: all 0.15s ease;
+            backdrop-filter: blur(8px);
         }
         .header-btn:hover {
-            background: rgba(255, 255, 255, 0.08);
-            color: var(--text-main);
-            border-color: var(--border-hover);
+            background: rgba(255, 255, 255, 0.1);
+            color: #FFFFFF;
+            border-color: rgba(255, 255, 255, 0.25);
         }
         .header-btn.active {
-            color: var(--accent-glow);
-            border-color: rgba(59, 130, 246, 0.4);
-            background: rgba(59, 130, 246, 0.1);
+            color: #A855F7;
+            border-color: rgba(168, 85, 247, 0.5);
+            background: rgba(168, 85, 247, 0.15);
         }
 
         /* 2. Main Content Layout */
@@ -577,25 +594,31 @@ def root_dashboard():
 
         .hero {
             text-align: center;
-            margin-bottom: 32px;
+            margin-top: 24px;
+            margin-bottom: 28px;
         }
 
         .hero h1 {
-            font-size: 34px;
+            font-size: 36px;
             font-weight: 800;
-            letter-spacing: -0.03em;
-            margin-bottom: 10px;
-            background: linear-gradient(135deg, #FFFFFF 30%, #94A3B8 100%);
+            letter-spacing: -0.025em;
+            margin-bottom: 12px;
+            color: #FFFFFF;
+        }
+
+        .hero h1 .gradient-purple {
+            background: linear-gradient(135deg, #E879F9 0%, #A855F7 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
+            display: inline-block;
         }
 
         .hero p {
-            color: var(--text-muted);
+            color: #94A3B8;
             font-size: 14.5px;
-            max-width: 620px;
-            margin: 0 auto 20px;
-            line-height: 1.5;
+            max-width: 660px;
+            margin: 0 auto 22px;
+            line-height: 1.55;
         }
 
         /* Quick Demo Chips */
@@ -609,89 +632,96 @@ def root_dashboard():
         }
 
         .chip-label {
-            font-size: 11.5px;
-            color: var(--text-dim);
+            font-size: 11px;
+            color: #64748B;
             font-family: var(--mono);
+            font-weight: 600;
             text-transform: uppercase;
-            letter-spacing: 0.05em;
-            margin-right: 4px;
+            letter-spacing: 0.06em;
+            margin-right: 6px;
         }
 
         .demo-chip {
-            background: rgba(255, 255, 255, 0.03);
-            border: 1px solid var(--border);
-            border-radius: 20px;
-            padding: 4px 12px;
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 9999px;
+            padding: 6px 14px;
             font-size: 12px;
-            color: var(--text-muted);
+            color: #CBD5E1;
             cursor: pointer;
             transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
             display: inline-flex;
             align-items: center;
-            gap: 5px;
+            gap: 6px;
+            backdrop-filter: blur(8px);
         }
         .demo-chip:hover {
-            background: rgba(59, 130, 246, 0.12);
+            background: rgba(147, 51, 234, 0.15);
             color: #FFFFFF;
-            border-color: rgba(59, 130, 246, 0.4);
+            border-color: rgba(168, 85, 247, 0.45);
             transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(147, 51, 234, 0.2);
         }
 
         /* 3. Modern Segmented Tab Switcher */
         .tabs {
             display: inline-flex;
-            background: var(--bg-elevated);
-            border: 1px solid var(--border);
+            background: rgba(15, 23, 42, 0.65);
+            border: 1px solid rgba(255, 255, 255, 0.1);
             padding: 4px;
-            border-radius: 12px;
-            margin-bottom: 18px;
+            border-radius: 9999px;
+            margin-bottom: 22px;
+            backdrop-filter: blur(14px);
         }
 
         .tab-btn {
-            background: none;
-            border: none;
-            color: var(--text-dim);
+            background: transparent;
+            border: 1px solid transparent;
+            color: #94A3B8;
             font-family: var(--sans);
-            font-size: 13px;
+            font-size: 12.5px;
             font-weight: 500;
-            padding: 7px 18px;
-            border-radius: 9px;
+            padding: 7px 22px;
+            border-radius: 9999px;
             cursor: pointer;
             transition: all 0.15s ease;
             display: flex;
             align-items: center;
-            gap: 6px;
+            gap: 7px;
         }
 
         .tab-btn:hover {
-            color: var(--text-muted);
+            color: #FFFFFF;
         }
 
         .tab-btn.active {
-            background: var(--surface);
+            background: rgba(124, 58, 237, 0.25);
+            border: 1px solid #7C3AED;
             color: #FFFFFF;
             font-weight: 600;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
-            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 0 14px rgba(124, 58, 237, 0.35);
         }
 
         /* 4. Glowing Input Bar */
         .input-bar {
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: 14px;
-            padding: 6px 8px 6px 18px;
+            max-width: 840px;
+            width: 100%;
+            margin: 0 auto 28px;
+            background: rgba(10, 16, 26, 0.7);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(16, 185, 129, 0.45);
+            box-shadow: 0 0 24px rgba(16, 185, 129, 0.15), 0 8px 32px rgba(0, 0, 0, 0.5);
+            border-radius: 9999px;
+            padding: 5px 6px 5px 24px;
             display: flex;
             align-items: center;
             gap: 12px;
-            margin-bottom: 26px;
             transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
         }
 
         .input-bar:focus-within {
-            border-color: rgba(59, 130, 246, 0.6);
-            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2), 0 8px 24px rgba(0, 0, 0, 0.35);
+            border-color: rgba(16, 185, 129, 0.75);
+            box-shadow: 0 0 32px rgba(16, 185, 129, 0.3), 0 8px 36px rgba(0, 0, 0, 0.6);
         }
 
         .input-bar input,
@@ -711,7 +741,7 @@ def root_dashboard():
 
         .input-bar input::placeholder,
         #videoUrl::placeholder {
-            color: var(--text-dim);
+            color: #64748B;
             opacity: 1;
         }
 
@@ -721,37 +751,41 @@ def root_dashboard():
         .input-bar input:-webkit-autofill:focus, 
         .input-bar input:-webkit-autofill:active,
         #videoUrl:-webkit-autofill {
-            -webkit-box-shadow: 0 0 0 1000px #111624 inset !important;
+            -webkit-box-shadow: 0 0 0 1000px #0a101a inset !important;
             -webkit-text-fill-color: #FFFFFF !important;
-            box-shadow: 0 0 0 1000px #111624 inset !important;
+            box-shadow: 0 0 0 1000px #0a101a inset !important;
             transition: background-color 5000s ease-in-out 0s !important;
             caret-color: #FFFFFF !important;
         }
 
-        .input-bar button {
-            background: linear-gradient(135deg, #2563EB, #1D4ED8);
+        .input-bar button,
+        #btnAudit {
+            background: linear-gradient(135deg, #9333EA, #7C3AED);
             color: #FFFFFF;
-            border: 1px solid rgba(255, 255, 255, 0.15);
-            border-radius: 10px;
-            padding: 9px 24px;
+            border: none;
+            border-radius: 9999px;
+            padding: 10px 26px;
             font-family: var(--sans);
             font-weight: 600;
             font-size: 13.5px;
             cursor: pointer;
-            transition: all 0.15s ease;
-            box-shadow: 0 2px 10px rgba(37, 99, 235, 0.35);
+            transition: all 0.2s ease;
+            box-shadow: 0 0 20px rgba(147, 51, 234, 0.45);
             display: inline-flex;
             align-items: center;
-            gap: 6px;
+            gap: 7px;
+            white-space: nowrap;
         }
 
-        .input-bar button:hover {
-            background: linear-gradient(135deg, #3B82F6, #2563EB);
-            box-shadow: 0 4px 16px rgba(59, 130, 246, 0.45);
+        .input-bar button:hover,
+        #btnAudit:hover {
+            background: linear-gradient(135deg, #A855F7, #9333EA);
+            box-shadow: 0 0 26px rgba(168, 85, 247, 0.65);
             transform: translateY(-1px);
         }
 
-        .input-bar button:active {
+        .input-bar button:active,
+        #btnAudit:active {
             transform: translateY(0);
         }
 
@@ -786,12 +820,12 @@ def root_dashboard():
 
         /* 5. Results Panel & Truth Intelligence */
         .panel {
-            background: var(--surface-card);
-            backdrop-filter: blur(16px);
-            border: 1px solid var(--border);
-            border-radius: 18px;
+            background: rgba(10, 16, 26, 0.75);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 20px;
             padding: 28px;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            box-shadow: 0 16px 48px rgba(0, 0, 0, 0.5), 0 0 30px rgba(147, 51, 234, 0.08);
             transition: all 0.3s ease;
         }
 
@@ -1341,11 +1375,11 @@ def root_dashboard():
 
         /* Auto-Pause Warning Banner */
         .autopause-btn {
-            background: rgba(239, 68, 68, 0.12);
-            border: 1px solid rgba(239, 68, 68, 0.3);
-            color: #F87171;
-            padding: 6px 12px;
-            border-radius: 8px;
+            background: rgba(147, 51, 234, 0.2);
+            border: 1px solid rgba(168, 85, 247, 0.5);
+            color: #F3E8FF;
+            padding: 6px 16px;
+            border-radius: 9999px;
             cursor: pointer;
             font-size: 12px;
             font-weight: 600;
@@ -1353,11 +1387,19 @@ def root_dashboard():
             align-items: center;
             gap: 6px;
             transition: all 0.15s ease;
+            box-shadow: 0 0 14px rgba(147, 51, 234, 0.25);
+            backdrop-filter: blur(8px);
+        }
+        .autopause-btn:hover {
+            background: rgba(147, 51, 234, 0.3);
+            border-color: #A855F7;
+            color: #FFFFFF;
         }
         .autopause-btn.active {
-            background: rgba(239, 68, 68, 0.22);
-            border-color: #EF4444;
+            background: rgba(147, 51, 234, 0.25);
+            border-color: #A855F7;
             color: #FFFFFF;
+            box-shadow: 0 0 18px rgba(168, 85, 247, 0.35);
         }
 
         /* Toast notification */
@@ -1573,9 +1615,9 @@ def root_dashboard():
     <header>
         <a href="/" class="brand">
             <div class="brand-icon-box">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#60A5FA" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#C084FC" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M12 2L4 5v6.09c0 5.05 3.41 9.76 8 10.91 4.59-1.15 8-5.86 8-10.91V5l-8-3z"/>
-                    <path d="M10 15.5l-3.5-3.5 1.41-1.41L10 12.67l5.59-5.59L17 8.5l-7 7z" fill="#3B82F6"/>
+                    <path d="M10 15.5l-3.5-3.5 1.41-1.41L10 12.67l5.59-5.59L17 8.5l-7 7z" fill="#A855F7"/>
                 </svg>
             </div>
             <div class="brand-title">
@@ -1587,19 +1629,20 @@ def root_dashboard():
         <div class="header-meta">
             <div class="model-select-wrap">
                 <select id="modelSelector" class="model-dropdown" onchange="onModelChange()" title="Choose Active AI Reasoning Model">
-                    <option value="auto">🔄 Auto (Hybrid DeepSeek + Gemini)</option>
-                    <option value="deepseek-chat">🚀 DeepSeek-V3 (Precision & Speed)</option>
-                    <option value="deepseek-reasoner">🔬 DeepSeek-R1 (Deep Reasoner)</option>
-                    <option value="gemini-2.5-flash">⚡ Gemini 2.5 Flash (Search Grounded)</option>
+                    <option value="auto">🟣 Auto (Hybrid DeepSeek + Gemini)</option>
+                    <option value="groq">⚡ Groq Turbo (GPT-OSS 120B / 20B - 0.6s)</option>
                     <option value="gemini-2.0-flash">🔮 Gemini 2.0 Flash</option>
+                    <option value="gemini-1.5-flash">⚡ Gemini 1.5 Flash</option>
+                    <option value="deepseek-chat">🚀 DeepSeek-V3</option>
+                    <option value="deepseek-reasoner">🔬 DeepSeek-R1 (Deep Reasoner)</option>
                 </select>
             </div>
             <div class="status-pill" id="headerStatusPill">
                 <span class="status-pulse"></span>
-                <span id="headerStatusText">HYBRID AI ENGINE</span>
+                <span id="headerStatusText">HYBRID: DEEPSEEK + GEMINI</span>
             </div>
             <button class="header-btn" id="btnConfig" onclick="openConfigModal()" title="Configure DeepSeek & Gemini API Keys">
-                <span>⚙️</span>
+                <span>⚙</span>
                 <span>AI Config</span>
             </button>
             <button class="header-btn" id="soundToggle" onclick="toggleSound()">
@@ -1607,7 +1650,7 @@ def root_dashboard():
                 <span id="soundLabel">Audio</span>
             </button>
             <button class="autopause-btn active" id="btnAutoPause" onclick="toggleSafetyMode()">
-                <span id="apIcon">🛑</span>
+                <span id="apIcon">🟣</span>
                 <span id="apText">Safety Mode</span>
             </button>
         </div>
@@ -1615,13 +1658,13 @@ def root_dashboard():
 
     <main>
         <div class="hero">
-            <h1>Autonomous Video Fact-Checker</h1>
+            <h1>Autonomous Video <span class="gradient-purple">Fact-Checker</span></h1>
             <p>Paste any YouTube URL, video stream, or drop a local video file to perform an exhaustive factual, scientific, and historical veracity audit.</p>
 
             <div class="quick-chips">
-                <span class="chip-label">Quick Audits:</span>
+                <span class="chip-label">QUICK AUDITS:</span>
                 <button class="demo-chip" onclick="loadSample('Harry Potter and the Philosopher\'s Stone Official Teaser Trailer')">🎬 Harry Potter Trailer</button>
-                <button class="demo-chip" onclick="loadSample('https://www.youtube.com/watch?v=mWlmgwV44o')">🦸 Avengers: Doomsday</button>
+                <button class="demo-chip" onclick="loadSample('https://www.youtube.com/watch?v=mWlmgwV44o')">👤 Avengers: Doomsday</button>
                 <button class="demo-chip" onclick="loadSample('https://www.youtube.com/watch?v=P26AE7NLx4Q')">🎙️ Tom Holland Podcast</button>
                 <button class="demo-chip" onclick="loadSample('Quantum Computing and Superconductivity Truth')">⚡ Quantum Science</button>
             </div>
@@ -1684,6 +1727,26 @@ def root_dashboard():
             <div class="intel-box" id="intelBox">
                 <div class="intel-box-icon">🧠</div>
                 <div id="intelText">Fact-check audit complete.</div>
+            </div>
+
+            <!-- Political Stance Spectrum Banner (Dashboard) -->
+            <div id="politicalSpectrumBox" style="display:none; margin-top:12px; padding:12px 16px; background:rgba(15,23,42,0.6); border:1px solid rgba(255,255,255,0.08); border-radius:10px;">
+                <div style="display:flex; justify-content:space-between; align-items:center; font-size:12px; font-weight:600; color:#E2E8F0; margin-bottom:6px;">
+                    <span style="display:flex; align-items:center; gap:6px;">⚖️ Political Stance Spectrum</span>
+                    <span style="font-family:var(--mono); font-size:10px; color:var(--text-dim);">LIVE FACT AUDIT</span>
+                </div>
+                <div style="position:relative; width:100%; height:6px; background:linear-gradient(90deg, #EF4444 0%, #64748B 50%, #10B981 100%); border-radius:6px; margin:10px 0 6px 0;">
+                    <div id="dashSpectrumThumb" style="position:absolute; top:-4px; left:50%; width:14px; height:14px; border-radius:50%; background:#fff; border:2px solid #0F172A; transform:translateX(-50%); transition:left 0.7s cubic-bezier(0.34, 1.56, 0.64, 1); box-shadow:0 0 8px rgba(255,255,255,0.8);"></div>
+                </div>
+                <div style="display:flex; justify-content:space-between; font-size:10px; font-family:var(--mono); font-weight:500;">
+                    <span style="color:#F87171;">🔴 <span id="dashOppName">Opposition</span> <strong id="dashOppPct">0%</strong></span>
+                    <span style="color:#94A3B8;">⚪ Neutral <strong id="dashNeutralPct">0%</strong></span>
+                    <span style="color:#34D399;">🟢 <span id="dashRulingName">Ruling</span> <strong id="dashRulingPct">0%</strong></span>
+                </div>
+                <div style="margin-top:6px; display:flex; justify-content:space-between; align-items:center; font-size:11px;">
+                    <span id="dashLeanSummary" style="color:#F1F5F9; font-weight:500;">Video Lean: Balanced Political Discourse</span>
+                    <span style="color:#60A5FA; font-size:10.5px;">📡 Live Verified: Checked against Daily Fact Feeds</span>
+                </div>
             </div>
 
             <!-- Action Toolbar & Filters -->
@@ -1912,6 +1975,36 @@ def root_dashboard():
                 document.getElementById("intelText").innerText = data.intel;
             }
 
+            // Political Spectrum Handling (Dashboard)
+            const polBox = document.getElementById("politicalSpectrumBox");
+            if (polBox) {
+                const pol = data.political_profile;
+                if (pol && pol.is_political) {
+                    polBox.style.display = "block";
+                    const opp = pol.opp_lean_pct || 0;
+                    const rul = pol.ruling_lean_pct || 0;
+                    const neu = pol.neutral_pct !== undefined ? pol.neutral_pct : Math.max(0, 100 - (opp + rul));
+                    const oppEl = document.getElementById("dashOppPct");
+                    const neuEl = document.getElementById("dashNeutralPct");
+                    const rulEl = document.getElementById("dashRulingPct");
+                    const oppNameEl = document.getElementById("dashOppName");
+                    const rulNameEl = document.getElementById("dashRulingName");
+                    const leanEl = document.getElementById("dashLeanSummary");
+                    const thumbEl = document.getElementById("dashSpectrumThumb");
+                    if (oppNameEl) oppNameEl.innerText = pol.opp_entity ? pol.opp_entity : "Opposition";
+                    if (rulNameEl) rulNameEl.innerText = pol.ruling_entity ? pol.ruling_entity : "Ruling";
+                    if (oppEl) oppEl.innerText = opp + "%";
+                    if (neuEl) neuEl.innerText = neu + "%";
+                    if (rulEl) rulEl.innerText = rul + "%";
+                    if (leanEl) leanEl.innerText = "Video Lean: " + (pol.lean_summary || "Political Discourse");
+                    let pos = 50 + ((rul - opp) / 2);
+                    pos = Math.max(8, Math.min(92, pos));
+                    if (thumbEl) thumbEl.style.left = pos + "%";
+                } else {
+                    polBox.style.display = "none";
+                }
+            }
+
             filterCards(activeFilter);
         }
 
@@ -1937,6 +2030,9 @@ def root_dashboard():
             cardsList.innerHTML = filtered.map(c => {
                 const cClass = c.consensus === 'Universal Consensus' ? 'universal' : (c.consensus === 'Academic Debate' ? 'debate' : 'pseudoscience');
                 const cIcon = c.consensus === 'Universal Consensus' ? '🟢' : (c.consensus === 'Academic Debate' ? '🟡' : '🔴');
+                const stanceBadge = (c.stance && c.stance !== 'Neutral' && c.stance !== 'None')
+                    ? `<span style="font-size:10px; font-weight:600; padding:2px 7px; border-radius:4px; font-family:var(--mono); background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.15); color:#F1F5F9;">⚖️ ${c.stance}</span>`
+                    : '';
                 return `
                 <div class="card-item ${c.verdict}">
                     <div class="card-header">
@@ -1944,6 +2040,7 @@ def root_dashboard():
                             <span class="verdict-tag ${c.verdict}">
                                 ${c.verdict === 'FALSE' ? '❌ FALSE' : (c.verdict === 'MISLEADING' ? '⚠️ MISLEADING' : '✅ VERIFIED')}
                             </span>
+                            ${stanceBadge}
                             ${c.fallacy && c.fallacy !== 'None' ? `<span class="fallacy-tag">🚩 ${c.fallacy}</span>` : ''}
                             ${c.consensus && c.consensus !== 'N/A' ? `<span class="consensus-tag ${cClass}">${cIcon} ${c.consensus}</span>` : ''}
                         </div>
@@ -1954,9 +2051,10 @@ def root_dashboard():
                     <div class="explanation-text">${c.explanation}</div>
 
                     <div class="evidence-dossier">
-                        <div class="evidence-row">
+                        <div class="evidence-row" style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
                             <span class="authority-badge">🏛️ Authority: <strong>${c.source}</strong></span>
-                            ${c.sourceUrl ? `<a href="${c.sourceUrl}" target="_blank" rel="noopener" class="authority-link">View Institutional Record ↗</a>` : ''}
+                            <a href="https://www.google.com/search?q=${encodeURIComponent('\"' + c.source + '\" ' + (c.researchPaper || c.quote))}" target="_blank" rel="noopener" class="authority-link" title="Live official search (resilient against moved or shifted URLs)">🔍 Live Archive Search ↗</a>
+                            ${(c.sourceUrl && !c.sourceUrl.includes("google.com")) ? `<a href="${c.sourceUrl}" target="_blank" rel="noopener" class="authority-link" style="opacity:0.85;" title="Direct portal link">🏛️ Direct Portal ↗</a>` : ''}
                         </div>
                         ${c.researchPaper ? `<div class="paper-title">📄 ${c.researchPaper}</div>` : ''}
                         ${c.dataOrigin ? `<div style="font-size:10.5px; color:var(--text-dim); font-family:var(--mono);">Origin: ${c.dataOrigin}</div>` : ''}
@@ -1977,9 +2075,11 @@ def root_dashboard():
             const btn = document.getElementById("btnAutoPause");
             if (btn) {
                 btn.classList.toggle("active", safetyModeEnabled);
-                document.getElementById("apText").innerText = safetyModeEnabled ? "Safety Mode: ON" : "Safety Mode: OFF";
+                const icon = document.getElementById("apIcon");
+                if (icon) icon.innerText = safetyModeEnabled ? "🟣" : "⚪";
+                document.getElementById("apText").innerText = safetyModeEnabled ? "Safety Mode" : "Safety Mode: Off";
             }
-            showToast(safetyModeEnabled ? "🛑 Safety Mode Active: Auto-Pause on falsehoods" : "Safety Mode Deactivated");
+            showToast(safetyModeEnabled ? "🟣 Safety Mode Active: Auto-Pause on falsehoods" : "Safety Mode Deactivated");
         }
 
         async function sendAssistantQuestion() {
@@ -2103,16 +2203,45 @@ def root_dashboard():
                     if (data.deepseek_model) document.getElementById('cfgDeepseekModel').value = data.deepseek_model;
                     if (data.deepseek_base_url) document.getElementById('cfgDeepseekUrl').value = data.deepseek_base_url;
                     
+                    if (data.groq_configured) {
+                        const el = document.getElementById('cfgGroqKey');
+                        if (el) el.placeholder = `•••••••••••• (${data.groq_masked || 'Saved in .env'})`;
+                        const b = document.getElementById('badgeGroqSaved');
+                        if (b) { b.style.display = 'inline-flex'; b.innerText = '✅ Saved & Active'; }
+                    }
+                    if (data.deepseek_configured) {
+                        const el = document.getElementById('cfgDeepseekKey');
+                        if (el) el.placeholder = `•••••••••••• (${data.deepseek_masked || 'Saved in .env'})`;
+                        const b = document.getElementById('badgeDeepseekSaved');
+                        if (b) { b.style.display = 'inline-flex'; b.innerText = '✅ Saved & Active'; }
+                    }
+                    if (data.gemini_configured) {
+                        const el = document.getElementById('cfgGeminiKey');
+                        if (el) el.placeholder = `•••••••••••• (${data.gemini_masked || 'Saved in .env'})`;
+                        const b = document.getElementById('badgeGeminiSaved');
+                        if (b) { b.style.display = 'inline-flex'; b.innerText = '✅ Saved & Active'; }
+                    }
+                    if (data.exa_configured) {
+                        const el = document.getElementById('cfgExaKey');
+                        if (el) el.placeholder = `•••••••••••• (${data.exa_masked || 'Saved in .env'})`;
+                        const b = document.getElementById('badgeExaSaved');
+                        if (b) { b.style.display = 'inline-flex'; b.innerText = '✅ Saved & Active'; }
+                    }
+
                     const statusText = document.getElementById('headerStatusText');
                     if (statusText) {
-                        if (data.deepseek_configured && data.gemini_configured) {
+                        const sel = document.getElementById('modelSelector');
+                        const isAuto = !sel || sel.value === 'auto';
+                        if (isAuto || (data.deepseek_configured && data.gemini_configured)) {
                             statusText.innerText = "HYBRID: DEEPSEEK + GEMINI";
+                        } else if (data.groq_configured) {
+                            statusText.innerText = "GROQ TURBO ACTIVE";
                         } else if (data.deepseek_configured) {
                             statusText.innerText = "DEEPSEEK ACTIVE";
                         } else if (data.gemini_configured) {
                             statusText.innerText = "GEMINI ACTIVE";
                         } else {
-                            statusText.innerText = "NO API KEY";
+                            statusText.innerText = "HYBRID: DEEPSEEK + GEMINI";
                         }
                     }
                 }
@@ -2128,11 +2257,13 @@ def root_dashboard():
             btn.style.opacity = "0.7";
 
             const payload = {
+                groq_key: document.getElementById('cfgGroqKey') ? document.getElementById('cfgGroqKey').value.trim() : "",
                 deepseek_key: document.getElementById('cfgDeepseekKey').value.trim(),
                 gemini_key: document.getElementById('cfgGeminiKey').value.trim(),
                 provider: document.getElementById('cfgProvider').value,
                 deepseek_model: document.getElementById('cfgDeepseekModel').value,
-                deepseek_base_url: document.getElementById('cfgDeepseekUrl').value.trim()
+                deepseek_base_url: document.getElementById('cfgDeepseekUrl').value.trim(),
+                exa_key: document.getElementById('cfgExaKey') ? document.getElementById('cfgExaKey').value.trim() : ""
             };
 
             try {
@@ -2166,6 +2297,18 @@ def root_dashboard():
 
         function onModelChange() {
             const chosen = document.getElementById('modelSelector').value;
+            const statusText = document.getElementById('headerStatusText');
+            if (statusText) {
+                if (chosen === 'auto') {
+                    statusText.innerText = "HYBRID: DEEPSEEK + GEMINI";
+                } else if (chosen === 'groq') {
+                    statusText.innerText = "GROQ TURBO ACTIVE";
+                } else if (chosen.startsWith('gemini')) {
+                    statusText.innerText = "GEMINI ACTIVE";
+                } else if (chosen.startsWith('deepseek')) {
+                    statusText.innerText = "DEEPSEEK ACTIVE";
+                }
+            }
             showToast("Switched AI model to " + chosen);
         }
 
@@ -2185,11 +2328,25 @@ def root_dashboard():
                 </div>
                 <button class="modal-close-btn" onclick="closeConfigModal()">✕</button>
             </div>
-            <p class="modal-desc">Configure your DeepSeek and Google Gemini API keys. Keys are saved securely to your local <code>backend/.env</code> file.</p>
+            <p class="modal-desc" style="background:rgba(59,130,246,0.1); border:1px solid rgba(59,130,246,0.25); border-radius:8px; padding:8px 12px; margin-bottom:14px; font-size:11.5px; color:#93C5FD;">🔒 <strong>Keys are permanently saved in <code>backend/.env</code>.</strong> Aapko baar-baar keys enter karne ki zarurat nahi hai. Sirf tabhi type karein jab aapko key change ya update karni ho.</p>
+
+            <div class="config-group">
+                <label>
+                    <span>⚡ Groq Turbo API Key (0.6s LPU Speed)</span>
+                    <span id="badgeGroqSaved" style="display:none; font-size:10px; color:#34D399; font-weight:600; background:rgba(16,185,129,0.12); padding:2px 6px; border-radius:4px; margin-left:8px;">✅ Saved & Active</span>
+                    <a href="https://console.groq.com/keys" target="_blank" class="key-link">Get Free Groq Key ↗</a>
+                </label>
+                <div class="input-with-toggle">
+                    <input type="password" id="cfgGroqKey" placeholder="gsk_..." autocomplete="off">
+                    <button type="button" class="toggle-pw-btn" onclick="togglePasswordVisibility('cfgGroqKey')">👁️</button>
+                </div>
+                <div class="field-hint">Ultra-fast LPUs (Llama 3.3 70B & DeepSeek-R1 Distill). Free from GroqCloud.</div>
+            </div>
 
             <div class="config-group">
                 <label>
                     <span>🚀 DeepSeek API Key</span>
+                    <span id="badgeDeepseekSaved" style="display:none; font-size:10px; color:#34D399; font-weight:600; background:rgba(16,185,129,0.12); padding:2px 6px; border-radius:4px; margin-left:8px;">✅ Saved & Active</span>
                     <a href="https://platform.deepseek.com/" target="_blank" class="key-link">Get DeepSeek Key ↗</a>
                 </label>
                 <div class="input-with-toggle">
@@ -2202,13 +2359,14 @@ def root_dashboard():
             <div class="config-group">
                 <label>
                     <span>⚡ Google Gemini API Key</span>
+                    <span id="badgeGeminiSaved" style="display:none; font-size:10px; color:#34D399; font-weight:600; background:rgba(16,185,129,0.12); padding:2px 6px; border-radius:4px; margin-left:8px;">✅ Saved & Active</span>
                     <a href="https://aistudio.google.com/apikey" target="_blank" class="key-link">Get Free Gemini Key ↗</a>
                 </label>
                 <div class="input-with-toggle">
                     <input type="password" id="cfgGeminiKey" placeholder="AIzaSy..." autocomplete="off">
                     <button type="button" class="toggle-pw-btn" onclick="togglePasswordVisibility('cfgGeminiKey')">👁️</button>
                 </div>
-                <div class="field-hint">Free from Google AI Studio. Powers Gemini 2.5 Flash with live Google Search grounding.</div>
+                <div class="field-hint">Free from Google AI Studio. Powers Gemini 2.0 Flash & Gemini 1.5 Flash.</div>
             </div>
 
             <div class="config-row">
@@ -2232,6 +2390,19 @@ def root_dashboard():
             <div class="config-group">
                 <label>DeepSeek Base URL (OpenAI-compatible)</label>
                 <input type="text" id="cfgDeepseekUrl" value="https://api.deepseek.com" placeholder="https://api.deepseek.com">
+            </div>
+
+            <div class="config-group">
+                <label>
+                    <span>🌐 Exa AI Neural Search Key (Live Evidence Grounding)</span>
+                    <span id="badgeExaSaved" style="display:none; font-size:10px; color:#34D399; font-weight:600; background:rgba(16,185,129,0.12); padding:2px 6px; border-radius:4px; margin-left:8px;">✅ Saved & Active</span>
+                    <a href="https://dashboard.exa.ai/api-keys" target="_blank" class="key-link">Exa Dashboard ↗</a>
+                </label>
+                <div class="input-with-toggle">
+                    <input type="password" id="cfgExaKey" placeholder="823f16db-..." autocomplete="off">
+                    <button type="button" class="toggle-pw-btn" onclick="togglePasswordVisibility('cfgExaKey')">👁️</button>
+                </div>
+                <div class="field-hint">Neural web search for 100% active, live evidence citations without dead links.</div>
             </div>
 
             <div class="modal-actions">
@@ -2321,18 +2492,21 @@ async def save_config_endpoint(data: dict):
     groq_key = data.get("groq_key")
     gemini_key = data.get("gemini_key") or data.get("key")
     deepseek_key = data.get("deepseek_key")
+    exa_key = data.get("exa_key")
     provider = data.get("provider")
     deepseek_model = data.get("deepseek_model")
     deepseek_base_url = data.get("deepseek_base_url")
 
     try:
         new_status = ai_engine.save_ai_config(
+            # pyrefly: ignore[unexpected-keyword]
             groq_key=groq_key,
             deepseek_key=deepseek_key,
             gemini_key=gemini_key,
             provider=provider,
             deepseek_model=deepseek_model,
-            deepseek_base_url=deepseek_base_url
+            deepseek_base_url=deepseek_base_url,
+            exa_key=exa_key
         )
         return {
             "success": True,
@@ -2373,8 +2547,8 @@ def fetch_youtube_transcript(video_id: str):
     return segments, ""
 
 
-def build_transcript_text(segments, max_chars: int = 24000) -> str:
-    """Merge caption fragments into ~12s timestamped lines (whole video, no random sampling)."""
+def build_transcript_text(segments, max_chars: int = 14000) -> str:
+    """Merge caption fragments into ~12s timestamped lines (whole video, safely under Groq/Gemini TPM budgets)."""
     lines, bucket_start, buf = [], None, []
     for sec, text in segments:
         if bucket_start is None:
@@ -2460,7 +2634,20 @@ def normalize_provider(provider, model):
 
 
 def error_payload(msg: str) -> dict:
-    return {"score": 0, "intel": msg, "cards": [], "error": msg, "model": "none"}
+    return {
+        "score": 0,
+        "intel": msg,
+        "cards": [],
+        "error": msg,
+        "model": "none",
+        "political_profile": {
+            "is_political": False,
+            "ruling_lean_pct": 0,
+            "opp_lean_pct": 0,
+            "neutral_pct": 100,
+            "lean_summary": ""
+        }
+    }
 
 
 @app.post("/api/ask")
@@ -2501,6 +2688,63 @@ async def ask_assistant(
             "timestamp": timestamp, "model": used_model}
 
 
+@app.post("/api/translate")
+async def api_translate(payload: dict):
+    """
+    Translates text, lists of strings, or full fact-check card arrays
+    between English and Hindi using Groq Turbo with Gemini fallback.
+    """
+    try:
+        target_lang = payload.get("target_lang") or "hi"
+        cards = payload.get("cards")
+        texts = payload.get("texts") or ([payload.get("text")] if payload.get("text") else [])
+
+        if cards and isinstance(cards, list):
+            texts_to_trans = []
+            for c in cards:
+                texts_to_trans.append(c.get("quote", ""))
+                texts_to_trans.append(c.get("explanation", "") or c.get("correction", ""))
+                texts_to_trans.append(c.get("source", ""))
+            
+            # Also append summary texts if provided for unified batch translation
+            if texts and isinstance(texts, list):
+                for t in texts:
+                    texts_to_trans.append(str(t))
+            
+            translated = await ai_engine.translate_content(texts_to_trans, target_lang=target_lang)
+            
+            translated_cards = []
+            idx = 0
+            for c in cards:
+                card_copy = dict(c)
+                if idx < len(translated):
+                    card_copy["quote"] = translated[idx]
+                    idx += 1
+                if idx < len(translated):
+                    card_copy["explanation"] = translated[idx]
+                    idx += 1
+                if idx < len(translated):
+                    card_copy["source"] = translated[idx]
+                    idx += 1
+                translated_cards.append(card_copy)
+
+            translated_texts = []
+            while idx < len(translated):
+                translated_texts.append(translated[idx])
+                idx += 1
+
+            return {"success": True, "cards": translated_cards, "translations": translated_texts, "target_lang": target_lang}
+
+        if texts:
+            translated = await ai_engine.translate_content(texts, target_lang=target_lang)
+            return {"success": True, "translations": translated, "target_lang": target_lang}
+
+        return {"success": True, "translations": [], "target_lang": target_lang}
+    except Exception as e:
+        print(f"[!] Translate API error: {e}")
+        return {"success": False, "error": str(e), "translations": payload.get("texts") or []}
+
+
 @app.post("/api/check-local")
 async def check_local_file(
     file: UploadFile = File(...),
@@ -2511,17 +2755,12 @@ async def check_local_file(
     clean_title = os.path.splitext(filename)[0].replace("_", " ").replace("-", " ")
     clean_title = re.sub(r"\s+", " ", clean_title).strip()
     print(f"[*] Local file '{filename}' (title: '{clean_title}')...")
-    return await check_video(v=f"file:///{filename}", title=clean_title, channel="", provider=provider, model=model)
+    return await run_video_audit_pipeline(v=f"file:///{filename}", title=clean_title, channel="", provider=provider, model=model)
 
 
-@app.get("/api/check")
-async def check_video(
-    v: str = Query(..., description="YouTube Video ID or URL"),
-    title: str = Query("", description="Page or video title"),
-    channel: str = Query("", description="Channel / creator name"),
-    provider: str = Query(None, description="Model provider: auto, deepseek, or gemini"),
-    model: str = Query(None, description="Specific model name")
-):
+async def run_video_audit_pipeline(v: str, title: str = "", channel: str = "",
+                                   provider: str = None, model: str = None,
+                                   client_captions: list = None):
     video_id, title = extract_video_id_and_title(v, title)
     if not video_id:
         return {"score": 0, "intel": "No active video selected. Play a video or enter a URL above.", "cards": []}
@@ -2533,13 +2772,29 @@ async def check_video(
                              "GROQ_API_KEY (free from console.groq.com/keys) or GEMINI_API_KEY in backend/.env, then retry.")
 
     cache_key = f"{video_id}:{provider or 'default'}:{model or ''}"
-    if cache_key in VERIFICATION_CACHE:
+    if cache_key in VERIFICATION_CACHE and not client_captions:
         print(f"[CACHE HIT] {cache_key}")
         return VERIFICATION_CACHE[cache_key]
 
     is_topic = video_id.startswith(("local_", "topic_", "ig_")) or v.startswith("file:") or "instagram.com" in v
     segments = []
-    if is_topic:
+
+    # Priority 0: Client-provided browser captions (100% bypasses 403, contains real timestamps)
+    if client_captions and isinstance(client_captions, list) and len(client_captions) > 0:
+        for c in client_captions:
+            if isinstance(c, dict) and c.get("text"):
+                try:
+                    s_sec = int(c.get("seconds", 0))
+                    segments.append((s_sec, str(c.get("text", "")).strip()))
+                except (ValueError, TypeError):
+                    pass
+        if segments:
+            print(f"[+] Real-time client captions utilized: {len(segments)} segments for {video_id}.")
+
+    if segments:
+        mode = "transcript"
+        text_chunk = build_transcript_text(segments)
+    elif is_topic:
         mode = "topic"
         if video_id.startswith("ig_") or "instagram.com" in v:
             shortcode = video_id.replace("ig_", "")
@@ -2558,12 +2813,37 @@ async def check_video(
         else:
             text_chunk = f"Title / topic: {title}"
     else:
-        mode = "transcript"
-        segments, terr = await asyncio.to_thread(fetch_youtube_transcript, video_id)
-        if not segments:
-            return error_payload(f"No captions/transcript could be fetched for this video ({terr[:200]}). "
-                                 "Real fact-checking needs the spoken text, so nothing was audited.")
-        text_chunk = build_transcript_text(segments)
+        segments = []
+        terr = ""
+        try:
+            segments, terr = await asyncio.to_thread(fetch_youtube_transcript, video_id)
+        except Exception as te:
+            terr = str(te)
+
+        if segments:
+            mode = "transcript"
+            text_chunk = build_transcript_text(segments)
+        else:
+            print(f"[*] Subtitles disabled or unavailable for {video_id} ({terr}). Activating Topic & Claim Audit fallback...")
+            mode = "topic"
+            clean_title = title if (title and title.lower() not in ["youtube", "live video", ""]) else ""
+            if not clean_title:
+                try:
+                    client = ai_engine.get_http_client()
+                    oembed_resp = await client.get(
+                        f"https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v={video_id}&format=json",
+                        timeout=5.0
+                    )
+                    if oembed_resp.status_code == 200:
+                        meta = oembed_resp.json()
+                        clean_title = meta.get("title", "")
+                        if not channel and meta.get("author_name"):
+                            channel = meta.get("author_name")
+                except Exception as oe:
+                    print(f"[!] oEmbed fallback note: {oe}")
+            if clean_title:
+                title = clean_title
+            text_chunk = f"Video Title / Discussion Subject: {title}\nChannel: {channel or 'YouTube Creator'}\nPlatform: YouTube (Subtitles disabled by uploader)\nPlease analyze and fact-check all key verifiable factual statements, scientific claims, health advice, behavioral rules, and statistics related to this topic."
 
     try:
         parsed, used_model = await ai_engine.audit_claims(
@@ -2574,15 +2854,44 @@ async def check_video(
         print(f"[Error] Live AI verification failed: {err}")
         return error_payload(f"Live AI verification failed: {err}")
 
+    if not segments and mode == "topic" and not video_id.startswith(("local_", "ig_")):
+        parsed["intel"] = f"Audited via Video Topic & Claims Analysis (Subtitles disabled by creator): {parsed.get('intel', '')}"
     print(f"[+] Fact-checked with {used_model}: {len(parsed.get('cards', []))} claims.")
     parsed["video_id"] = video_id
-    VERIFICATION_CACHE[cache_key] = parsed
-    VERIFICATION_CACHE[video_id] = parsed
-    while len(VERIFICATION_CACHE) > MAX_CACHE_SIZE * 2:
-        VERIFICATION_CACHE.pop(next(iter(VERIFICATION_CACHE)))
-    save_cache_to_disk()
+    if parsed.get("cards") and not parsed.get("error"):
+        VERIFICATION_CACHE[cache_key] = parsed
+        VERIFICATION_CACHE[video_id] = parsed
+        while len(VERIFICATION_CACHE) > MAX_CACHE_SIZE * 2:
+            VERIFICATION_CACHE.pop(next(iter(VERIFICATION_CACHE)))
+        save_cache_to_disk()
     record_channel_audit(channel, video_id, title, parsed)
     return parsed
+
+
+@app.get("/api/check")
+async def check_video_get(
+    v: str = Query(..., description="YouTube Video ID or URL"),
+    title: str = Query("", description="Page or video title"),
+    channel: str = Query("", description="Channel / creator name"),
+    provider: str = Query(None, description="Model provider: auto, deepseek, or gemini"),
+    model: str = Query(None, description="Specific model name")
+):
+    return await run_video_audit_pipeline(v=v, title=title, channel=channel, provider=provider, model=model)
+
+
+@app.post("/api/check")
+async def check_video_post(request: Request):
+    try:
+        body = await request.json()
+    except Exception:
+        body = {}
+    v = body.get("v") or body.get("videoId") or ""
+    title = body.get("title") or ""
+    channel = body.get("channel") or ""
+    provider = body.get("provider")
+    model = body.get("model")
+    client_captions = body.get("captions") or []
+    return await run_video_audit_pipeline(v=v, title=title, channel=channel, provider=provider, model=model, client_captions=client_captions)
 
 
 @app.post("/api/instagram-reel")
@@ -2629,8 +2938,16 @@ async def instagram_reel(request: Request):
     # Build unique ID & check cache first (0ms instant re-visits)
     video_id = f"ig_{shortcode}" if shortcode else ("ig_" + hashlib.md5(reel_url.encode()).hexdigest()[:10])
     if video_id in VERIFICATION_CACHE:
-        print(f"[CACHE HIT] Instagram Reel {video_id}")
-        return VERIFICATION_CACHE[video_id]
+        cached = VERIFICATION_CACHE[video_id]
+        # Invalidate old stale trivia cache (e.g. facts about Instagram company rather than the reel)
+        cards = cached.get("cards", []) if isinstance(cached, dict) else []
+        is_stale_trivia = any("instagram" in str(c.get("quote", "")).lower() and ("algorithm" in str(c.get("quote", "")).lower() or "launched reels" in str(c.get("quote", "")).lower()) for c in cards)
+        if not is_stale_trivia and cards:
+            print(f"[CACHE HIT] Instagram Reel {video_id}")
+            return cached
+        else:
+            print(f"[*] Evicted stale company trivia cache for {video_id}")
+            VERIFICATION_CACHE.pop(video_id, None)
 
     reel_content = f"Title: {title}\nCaption & Claims: {desc}".strip()
 

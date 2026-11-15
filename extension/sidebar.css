@@ -67,13 +67,6 @@
   transform: translateY(0) scale(0.98) translateZ(0);
 }
 
-body.lt-panel-open #livetruth-btn,
-#livetruth-panel.open ~ #livetruth-btn {
-  opacity: 0 !important;
-  pointer-events: none !important;
-  transform: scale(0.8) translateZ(0) !important;
-}
-
 /* 2. Sleek Minimalist Sidebar */
 #livetruth-panel {
   position: fixed;
@@ -87,31 +80,22 @@ body.lt-panel-open #livetruth-btn,
   border-left: 1px solid var(--lt-border);
   box-shadow: -15px 0 45px rgba(0, 0, 0, 0.7);
   z-index: 999998;
-  display: flex;
-  flex-direction: column;
+  display: flex !important;
+  flex-direction: column !important;
   font-family: var(--lt-font);
   will-change: transform;
   transform: translate3d(100%, 0, 0);
   transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
   border-top-left-radius: 16px;
   border-bottom-left-radius: 16px;
-  overflow: hidden;
-}
-
-body.lt-on-instagram #livetruth-panel {
-  top: 0 !important;
-  height: 100vh !important;
-  width: 385px !important;
-  border-top-left-radius: 16px;
-  border-bottom-left-radius: 16px;
-  box-shadow: -20px 0 60px rgba(0, 0, 0, 0.85);
+  overflow: hidden !important;
 }
 
 #livetruth-panel.open {
   transform: translate3d(0, 0, 0);
 }
 
-/* 3. Panel Header */
+/* 3. Panel Header - Frozen at Top */
 .lt-head {
   padding: 10px 16px;
   background: var(--lt-surface);
@@ -119,7 +103,7 @@ body.lt-on-instagram #livetruth-panel {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  flex-shrink: 0;
+  flex-shrink: 0 !important;
 }
 
 .lt-head h2 {
@@ -298,9 +282,198 @@ body.lt-on-instagram #livetruth-panel {
   margin-top: 2px;
   display: -webkit-box;
   -webkit-line-clamp: 2;
+  line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+/* ==========================================================================
+   Political Stance Spectrum Gauge (Hidden by default, unhides for political media)
+   ========================================================================== */
+#lt-political-spectrum-box {
+  display: block;
+  max-height: 0;
+  opacity: 0;
+  overflow: hidden;
+  padding: 0 14px;
+  transform: translateY(-6px);
+  background: rgba(15, 23, 42, 0.45);
+  border-bottom: 0px solid transparent;
+  flex-shrink: 0;
+  pointer-events: none;
+  transition: max-height 0.45s cubic-bezier(0.16, 1, 0.3, 1),
+              opacity 0.35s ease,
+              padding 0.35s ease,
+              transform 0.35s ease,
+              border-bottom 0.35s ease;
+  will-change: max-height, opacity, transform;
+}
+
+#lt-political-spectrum-box.active {
+  max-height: 180px;
+  opacity: 1;
+  padding: 8px 14px;
+  transform: translateY(0);
+  border-bottom: 1px solid var(--lt-border);
+  pointer-events: auto;
+}
+
+.lt-spectrum-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 11px;
+  font-weight: 600;
+  color: #E2E8F0;
+  margin-bottom: 4px;
+}
+
+.lt-spectrum-track-wrap {
+  position: relative;
+  width: 100%;
+  height: 6px;
+  background: rgba(30, 41, 59, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  margin: 8px 0 6px 0;
+  overflow: visible;
+}
+
+.lt-spectrum-notch {
+  position: absolute;
+  left: 50%;
+  top: -2px;
+  width: 2px;
+  height: 10px;
+  background: rgba(255, 255, 255, 0.35);
+  border-radius: 1px;
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+
+.lt-spectrum-fill {
+  position: absolute;
+  top: 0;
+  height: 100%;
+  border-radius: 6px;
+  transition: all 0.65s cubic-bezier(0.34, 1.56, 0.64, 1);
+  pointer-events: none;
+}
+
+.lt-spectrum-fill.lean-ruling {
+  background: linear-gradient(90deg, rgba(245, 158, 11, 0.35), #F59E0B);
+  box-shadow: 0 0 8px rgba(245, 158, 11, 0.6);
+}
+
+.lt-spectrum-fill.lean-opp {
+  background: linear-gradient(270deg, rgba(56, 189, 248, 0.35), #38BDF8);
+  box-shadow: 0 0 8px rgba(56, 189, 248, 0.6);
+}
+
+.lt-spectrum-thumb {
+  position: absolute;
+  top: -4px;
+  left: 50%;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #FFFFFF;
+  border: 2px solid #0F172A;
+  box-shadow: 0 0 10px rgba(255, 255, 255, 0.9);
+  transform: translateX(-50%);
+  transition: left 0.7s cubic-bezier(0.34, 1.56, 0.64, 1), transform 0.2s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+  will-change: left;
+  z-index: 2;
+}
+
+.lt-spectrum-thumb.lean-ruling {
+  border-color: #F59E0B;
+  box-shadow: 0 0 12px rgba(245, 158, 11, 0.9), 0 0 4px #FFFFFF;
+}
+
+.lt-spectrum-thumb.lean-opp {
+  border-color: #38BDF8;
+  box-shadow: 0 0 12px rgba(56, 189, 248, 0.9), 0 0 4px #FFFFFF;
+}
+
+.lt-spectrum-thumb:hover {
+  transform: translateX(-50%) scale(1.18);
+  box-shadow: 0 0 14px rgba(255, 255, 255, 1);
+}
+
+.lt-spectrum-labels {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 9.5px;
+  font-family: var(--lt-mono);
+  font-weight: 500;
+  gap: 4px;
+}
+
+.lt-lbl-opp {
+  color: #38BDF8;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  max-width: 42%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.lt-lbl-neutral {
+  color: #94A3B8;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  flex-shrink: 0;
+}
+
+.lt-lbl-ruling {
+  color: #F59E0B;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  max-width: 42%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  justify-content: flex-end;
+}
+
+.lt-spectrum-sub {
+  font-size: 10.5px;
+  color: var(--lt-text-muted);
+  margin-top: 5px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.lt-spectrum-lean {
+  font-weight: 500;
+  color: #F1F5F9;
+  font-size: 11px;
+}
+
+.lt-spectrum-live {
+  font-size: 9.5px;
+  color: var(--lt-accent-hover);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* Creator Veracity Index Box */
+.lt-creator-veracity-box {
+  transition: all 0.25s ease;
+}
+.lt-creator-veracity-box:hover {
+  background: rgba(15, 23, 42, 0.85) !important;
+  border-color: rgba(59, 130, 246, 0.55) !important;
+  transform: translateY(-1px);
 }
 
 /* Meter */
@@ -418,16 +591,30 @@ body.lt-on-instagram #livetruth-panel {
   color: #000;
 }
 
+.lt-timeline-pin.active {
+  background: #FFFFFF !important;
+  color: #0F172A !important;
+  font-weight: 700 !important;
+  border-color: #A855F7 !important;
+  box-shadow: 0 0 14px rgba(168, 85, 247, 0.7), 0 2px 8px rgba(0, 0, 0, 0.5) !important;
+  transform: translateY(-1px) scale(1.06) !important;
+}
+
+.lt-timeline-pin:active {
+  transform: translateY(0) scale(0.96) !important;
+}
+
 /* 7. Feed & Fact Cards */
 .lt-cards-feed {
-  flex: 1 1 auto;
-  min-height: 250px;
+  flex: 1 1 auto !important;
+  min-height: 0 !important;
   overflow-y: auto !important;
+  overflow-x: hidden !important;
   padding: 10px 14px 40px 14px;
   display: flex;
   flex-direction: column;
   gap: 9px;
-  overscroll-behavior-y: contain;
+  overscroll-behavior: contain !important;
 }
 
 .lt-cards-feed::-webkit-scrollbar {
@@ -497,6 +684,49 @@ body.lt-on-instagram #livetruth-panel {
 .lt-badge.VERIFIED { background: rgba(16, 185, 129, 0.12); color: #34D399; }
 .lt-badge.FALSE { background: rgba(239, 68, 68, 0.12); color: #F87171; }
 .lt-badge.MISLEADING { background: rgba(245, 158, 11, 0.12); color: #FBBF24; }
+.lt-badge.EXAGGERATION { background: rgba(245, 158, 11, 0.12); color: #FBBF24; }
+
+/* Political Stance Badges (Dual-Axis Matrix: Scenarios A, B, C, D) */
+.lt-stance-pill {
+  font-family: var(--lt-mono);
+  font-size: 8.5px;
+  font-weight: 600;
+  padding: 1.5px 6px;
+  border-radius: 4px;
+  margin-left: 6px;
+  letter-spacing: 0.3px;
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.lt-stance-anti-opp {
+  background: rgba(239, 68, 68, 0.15);
+  color: #F87171;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.lt-stance-pro-ruling,
+.lt-stance-defends-ruling {
+  background: rgba(16, 185, 129, 0.15);
+  color: #34D399;
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.lt-stance-anti-ruling,
+.lt-stance-anti-govt {
+  background: rgba(59, 130, 246, 0.15);
+  color: #60A5FA;
+  border: 1px solid rgba(59, 130, 246, 0.3);
+}
+
+.lt-stance-pro-opp,
+.lt-stance-defends-opp {
+  background: rgba(245, 158, 11, 0.15);
+  color: #FBBF24;
+  border: 1px solid rgba(245, 158, 11, 0.3);
+}
 
 .lt-time-btn {
   background: rgba(255, 255, 255, 0.05);
@@ -1083,22 +1313,80 @@ body.lt-on-instagram #livetruth-panel {
 
 /* In-Video Auto-Pause Overlay */
 #lt-autopause-overlay {
-  position: absolute;
-  top: 15%;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 99999;
-  background: rgba(15, 23, 42, 0.95);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 2px solid #EF4444;
-  border-radius: 14px;
-  padding: 16px 20px;
-  max-width: 460px;
-  width: 85%;
-  box-shadow: 0 12px 40px rgba(239, 68, 68, 0.35);
-  color: #FFFFFF;
+  position: fixed !important;
+  top: 24px !important;
+  left: 50% !important;
+  transform: translateX(-50%) !important;
+  z-index: 2147483647 !important;
+  background: rgba(15, 23, 42, 0.96) !important;
+  backdrop-filter: blur(16px) !important;
+  -webkit-backdrop-filter: blur(16px) !important;
+  border: 1.5px solid #EF4444 !important;
+  border-radius: 16px !important;
+  padding: 16px 22px !important;
+  max-width: 520px !important;
+  width: 90% !important;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.8), 0 0 30px rgba(239, 68, 68, 0.3) !important;
+  color: #FFFFFF !important;
+  font-family: var(--lt-font) !important;
+  pointer-events: auto !important;
+  animation: ltSlideDown 0.25s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+@keyframes ltSlideDown {
+  from { opacity: 0; transform: translate(-50%, -15px); }
+  to { opacity: 1; transform: translate(-50%, 0); }
+}
+
+/* Language Switcher Pill in Header */
+.lt-lang-toggle {
+  background: rgba(147, 51, 234, 0.16);
+  border: 1px solid rgba(168, 85, 247, 0.45);
+  color: #E9D5FF;
+  padding: 4px 10px;
+  border-radius: 9999px;
   font-family: var(--lt-font);
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  backdrop-filter: blur(8px);
+}
+.lt-lang-toggle:hover {
+  background: rgba(147, 51, 234, 0.3);
+  border-color: #A855F7;
+  color: #FFFFFF;
+  transform: translateY(-1px);
+  box-shadow: 0 0 12px rgba(147, 51, 234, 0.3);
+}
+.lt-lang-toggle.active {
+  background: linear-gradient(135deg, #9333EA, #7C3AED);
+  border-color: #C084FC;
+  color: #FFFFFF;
+  box-shadow: 0 0 14px rgba(147, 51, 234, 0.4);
+}
+
+/* Card-level translate button */
+.lt-card-trans-btn {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #CBD5E1;
+  border-radius: 6px;
+  padding: 2px 7px;
+  font-size: 10px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+.lt-card-trans-btn:hover {
+  background: rgba(147, 51, 234, 0.2);
+  border-color: rgba(168, 85, 247, 0.4);
+  color: #FFFFFF;
 }
 .lt-ap-badge {
   display: inline-flex;
@@ -1146,3 +1434,86 @@ body.lt-on-instagram #livetruth-panel {
   transition: opacity 0.15s ease;
 }
 .lt-ap-resume-btn:hover { opacity: 0.9; }
+
+/* ==========================================================================
+   Instagram-Specific UI & Responsive Docking System
+   ========================================================================== */
+
+/* YouTube-only elements (hide on Instagram) */
+.lt-youtube-only { display: block !important; }
+body.lt-on-instagram .lt-youtube-only,
+body.instagram-reel .lt-youtube-only { display: none !important; }
+
+/* Instagram-only elements (show on Instagram) */
+.lt-instagram-only { display: none !important; }
+body.lt-on-instagram .lt-instagram-only,
+body.instagram-reel .lt-instagram-only { display: block !important; }
+
+/* Instagram sidebar docked styling */
+body.lt-on-instagram #livetruth-panel,
+body.instagram-reel #livetruth-panel,
+.lt-panel-instagram {
+  position: fixed !important;
+  right: 0 !important;
+  left: auto !important;
+  top: 0 !important;
+  bottom: 0 !important;
+  height: 100vh !important;
+  width: 360px !important;
+  max-width: calc(100vw - 16px) !important;
+  margin: 0 !important;
+  z-index: 99999 !important;
+  border-left: 1px solid rgba(255, 255, 255, 0.1) !important;
+  border-radius: 0 !important;
+  box-shadow: -6px 0 24px rgba(0, 0, 0, 0.5) !important;
+  transition: right 0.3s ease, width 0.3s ease, transform 0.3s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  will-change: right, width, transform !important;
+}
+
+/* Instagram HUD */
+.lt-hud-badge.instagram { 
+  background: linear-gradient(135deg, #f093fb, #f5576c) !important; 
+  color: #FFFFFF !important;
+}
+
+body.lt-on-instagram #livetruth-video-hud,
+body.instagram-reel #livetruth-video-hud {
+  right: 380px !important;
+  top: 80px !important;
+  bottom: auto !important;
+  z-index: 99998 !important;
+}
+
+/* Condensed timeline for vertical video */
+.lt-timeline-pin.instagram {
+  font-size: 10px !important;
+  padding: 4px 8px !important;
+}
+
+body.lt-on-instagram .lt-card,
+body.instagram-reel .lt-card {
+  padding: 10px 12px !important;
+  margin-bottom: 8px !important;
+}
+
+body.lt-on-instagram .lt-quote,
+body.instagram-reel .lt-quote {
+  font-size: 12px !important;
+  line-height: 1.4 !important;
+}
+
+body.lt-on-instagram .lt-explanation,
+body.instagram-reel .lt-explanation {
+  font-size: 11.5px !important;
+  line-height: 1.4 !important;
+}
+
+/* Hide floating pill button when panel is open */
+body.lt-panel-open #livetruth-btn,
+#livetruth-panel.open ~ #livetruth-btn,
+body:has(#livetruth-panel.open) #livetruth-btn {
+  display: none !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  transform: scale(0.8) translateZ(0) !important;
+}
