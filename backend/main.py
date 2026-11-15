@@ -2973,6 +2973,19 @@ async def instagram_reel(request: Request):
     reel_content = "\n\n".join(content_blocks)
     audit_title = custom_title or (f"Instagram Reel by {author}" if author else f"Instagram Reel {shortcode}")
 
+    # STRICT GUARD: Caption length < 15 chars AND no spoken dialogue = nothing real to audit
+    # This prevents AI from hallucinating Instagram company trivia when reel content is empty
+    meaningful_caption = caption.strip() if caption else ""
+    meaningful_dialogue = spoken_dialogue.strip() if spoken_dialogue else ""
+    if len(meaningful_caption) < 15 and not meaningful_dialogue:
+        return {
+            "score": 0,
+            "intel": f"⚠️ Could not extract sufficient reel content to fact-check. The reel may not have captions or the creator's speech could not be transcribed. Try auditing a reel with visible caption text.",
+            "cards": [],
+            "source": "Instagram",
+            "video_id": video_id
+        }
+
     mode = "transcript" if spoken_dialogue else "topic"
 
     reel_prompt_text = (

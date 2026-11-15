@@ -495,25 +495,67 @@
           }
         }
 
-        // C. Multi-element Caption Extraction
+        // C. Multi-element Caption Extraction — Strict selectors to avoid UI noise
         const textPieces = [];
-        const captionEls = container.querySelectorAll("h1, div[class*='_a9zs'], div[class*='caption'], span[dir='auto'], div[dir='auto']");
-        captionEls.forEach(el => {
-          const t = el.innerText ? el.innerText.trim() : "";
-          if (t.length > 8 &&
-              !t.includes("likes") &&
-              !t.includes("comments") &&
-              !t.includes("Audio unavailable") &&
-              !t.includes("Original audio") &&
-              !t.match(/^(?:view|reply|share|send|save|follow|more|view all.*)$/i)) {
-            if (!textPieces.some(p => p.includes(t) || t.includes(p))) {
-              textPieces.push(t);
+
+        // Priority 1: Try specific Instagram caption container selectors (most reliable)
+        const igCaptionSelectors = [
+          "h1._aacl",                                    // classic IG caption h1
+          "div._a9zs h1",                                // reel description wrapper
+          "div[class*='x9f619'][class*='x1ja2u2z'] h1", // new obfuscated wrapper
+          "ul > li:first-child > div h1",               // first comment is usually caption
+          "div[data-testid='reel-caption'] span",        // testid-based
+          "span._aacl._aaco._aacu._aacx",               // legacy caption span
+        ];
+
+        let captionFound = false;
+        for (const sel of igCaptionSelectors) {
+          try {
+            const el = container.querySelector(sel) || document.querySelector(sel);
+            if (el && el.innerText && el.innerText.trim().length > 15) {
+              textPieces.push(el.innerText.trim());
+              captionFound = true;
+              break;
             }
-          }
-        });
+          } catch(e) {}
+        }
+
+        // Priority 2: Broader scan only if strict selectors failed
+        if (!captionFound) {
+          // Only scan span[dir='auto'] elements that are INSIDE a list item (comment/caption area)
+          // and have meaningful length — avoids nav labels, button text, usernames
+          const broadEls = container.querySelectorAll("ul li span[dir='auto'], div[dir='auto'] > span[dir='auto']");
+          broadEls.forEach(el => {
+            const t = el.innerText ? el.innerText.trim() : "";
+            // Must be meaningful text (>20 chars), not a username, not a pure emoji line, not UI text
+            if (t.length > 20 &&
+                !t.match(/^@[\w.]+$/) &&
+                !t.match(/^\d[\d,.]+\s*(likes?|views?|followers?|following)/i) &&
+                !t.includes("Audio unavailable") &&
+                !t.includes("Original audio") &&
+                !t.includes("Turn off commenting") &&
+                !t.match(/^(?:view all \d+ comments?|reply|share|send|save|follow|more|view all|liked by)$/i) &&
+                !t.match(/^[\p{Emoji}\s]+$/u)) {
+              if (!textPieces.some(p => p.includes(t) || t.includes(p))) {
+                textPieces.push(t);
+              }
+            }
+          });
+        }
 
         if (textPieces.length) {
-          caption = textPieces.join("\n\n");
+          // De-duplicate: keep only the longest unique pieces
+          caption = textPieces
+            .sort((a, b) => b.length - a.length)
+            .slice(0, 3) // max 3 pieces to avoid UI garbage
+            .join("\n\n");
+        }
+
+        // Debug log (safe — only logs first 150 chars)
+        if (caption) {
+          console.log("[LiveTruth-IG] Caption extracted:", caption.slice(0, 150));
+        } else {
+          console.log("[LiveTruth-IG] No caption found via DOM. Will try OpenGraph fallback.");
         }
 
         // D. Audio track info
